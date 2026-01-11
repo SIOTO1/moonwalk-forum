@@ -4,6 +4,8 @@ import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
+import { ThreadImageUpload } from './ThreadImageUpload';
+import { ThreadImageGallery } from './ThreadImageGallery';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,6 +38,7 @@ export function CommentThread({
 }: CommentThreadProps) {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
+  const [commentImages, setCommentImages] = useState<string[]>([]);
   const createComment = useCreateComment();
 
   const handleSubmit = async () => {
@@ -45,8 +48,10 @@ export function CommentThread({
       await createComment.mutateAsync({
         postId,
         content: newComment.trim(),
+        images: commentImages,
       });
       setNewComment('');
+      setCommentImages([]);
       toast.success('Comment posted!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to post comment');
@@ -88,6 +93,14 @@ export function CommentThread({
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-[100px] bg-secondary border-0 focus-visible:ring-accent mb-3"
           />
+          <div className="mb-3">
+            <ThreadImageUpload
+              images={commentImages}
+              onImagesChange={setCommentImages}
+              userId={user.id}
+              maxImages={2}
+            />
+          </div>
           <div className="flex justify-end">
             <Button 
               onClick={handleSubmit}
@@ -137,6 +150,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
   const { user, canModerate } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState('');
+  const [replyImages, setReplyImages] = useState<string[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   // Fetch author badges
@@ -176,8 +190,10 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
         postId,
         content: replyContent.trim(),
         parentId: comment.id,
+        images: replyImages,
       });
       setReplyContent('');
+      setReplyImages([]);
       setShowReplyForm(false);
       toast.success('Reply posted!');
     } catch (error: any) {
@@ -280,6 +296,13 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
                   {comment.content}
                 </p>
 
+                {/* Comment Images */}
+                {comment.images && comment.images.length > 0 && (
+                  <div className="mb-3">
+                    <ThreadImageGallery images={comment.images} />
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex items-center gap-3 text-sm">
                   {depth < maxDepth && user && (
@@ -319,16 +342,24 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
                 </div>
 
                 {/* Reply Form */}
-                {showReplyForm && (
+                {showReplyForm && user && (
                   <div className="mt-3 space-y-2">
                     <div className="flex items-start gap-2">
                       <CornerDownRight className="w-4 h-4 text-muted-foreground mt-3" />
-                      <Textarea
-                        placeholder="Write a reply..."
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        className="flex-1 min-h-[80px] bg-secondary border-0"
-                      />
+                      <div className="flex-1 space-y-2">
+                        <Textarea
+                          placeholder="Write a reply..."
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          className="min-h-[80px] bg-secondary border-0"
+                        />
+                        <ThreadImageUpload
+                          images={replyImages}
+                          onImagesChange={setReplyImages}
+                          userId={user.id}
+                          maxImages={2}
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button 
@@ -337,6 +368,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
                         onClick={() => {
                           setShowReplyForm(false);
                           setReplyContent('');
+                          setReplyImages([]);
                         }}
                       >
                         Cancel

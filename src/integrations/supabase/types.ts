@@ -106,6 +106,7 @@ export type Database = {
           depth: number
           downvotes: number
           id: string
+          images: string[] | null
           is_accepted: boolean
           is_removed: boolean
           parent_id: string | null
@@ -124,6 +125,7 @@ export type Database = {
           depth?: number
           downvotes?: number
           id?: string
+          images?: string[] | null
           is_accepted?: boolean
           is_removed?: boolean
           parent_id?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           depth?: number
           downvotes?: number
           id?: string
+          images?: string[] | null
           is_accepted?: boolean
           is_removed?: boolean
           parent_id?: string | null

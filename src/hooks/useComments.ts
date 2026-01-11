@@ -12,6 +12,7 @@ export interface CommentWithAuthor {
   downvotes: number;
   is_accepted: boolean;
   depth: number;
+  images: string[];
   created_at: string;
   updated_at: string;
   author: {
@@ -124,11 +125,13 @@ export function useCreateComment() {
     mutationFn: async ({ 
       postId, 
       content, 
-      parentId 
+      parentId,
+      images = [],
     }: { 
       postId: string; 
       content: string; 
       parentId?: string;
+      images?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in to comment');
 
@@ -151,6 +154,7 @@ export function useCreateComment() {
           parent_id: parentId || null,
           content,
           depth,
+          images,
         })
         .select()
         .single();
