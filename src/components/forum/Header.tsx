@@ -37,11 +37,13 @@ export function Header({ onSearchChange, searchQuery = '', selectedCategory }: H
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-md border-b border-border/50 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-4">
             {/* Logo */}
-            <Logo size="md" />
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <Logo size="md" />
+            </Link>
 
             {/* Search - Desktop */}
             <div className="hidden md:flex flex-1 max-w-xl mx-8">
@@ -92,12 +94,16 @@ export function Header({ onSearchChange, searchQuery = '', selectedCategory }: H
                   <UserMenu />
                 </>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" className="hidden sm:flex" onClick={openSignIn}>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="ghost" 
+                    className="hidden sm:flex font-medium text-muted-foreground hover:text-foreground" 
+                    onClick={openSignIn}
+                  >
                     Sign In
                   </Button>
                   <Button 
-                    className="gradient-accent text-accent-foreground hover:opacity-90"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm"
                     onClick={openSignUp}
                   >
                     <span className="hidden sm:inline">Get Started</span>
