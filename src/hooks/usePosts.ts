@@ -55,7 +55,7 @@ export function usePosts(options: UsePostsOptions = {}) {
         .from('posts')
         .select(`
           *,
-          author:profiles(
+          author:profiles!posts_author_id_fkey(
             id,
             username,
             display_name,
@@ -63,7 +63,7 @@ export function usePosts(options: UsePostsOptions = {}) {
             membership_tier,
             reputation
           ),
-          category:categories(
+          category:categories!posts_category_id_fkey(
             id,
             name,
             slug,
@@ -126,7 +126,7 @@ export function usePost(postId: string | null) {
         .from('posts')
         .select(`
           *,
-          author:profiles(
+          author:profiles!posts_author_id_fkey(
             id,
             username,
             display_name,
@@ -134,7 +134,7 @@ export function usePost(postId: string | null) {
             membership_tier,
             reputation
           ),
-          category:categories(
+          category:categories!posts_category_id_fkey(
             id,
             name,
             slug,
