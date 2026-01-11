@@ -823,6 +823,8 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
+      category_visibility: "public" | "pro" | "elite"
+      content_status: "active" | "locked" | "removed"
       membership_tier: "free" | "pro" | "elite"
       moderation_action:
         | "warning"
@@ -844,6 +846,7 @@ export type Database = {
         | "other"
       report_status: "pending" | "reviewed" | "resolved" | "dismissed"
       restriction_type: "warning" | "temp_restriction" | "suspension"
+      user_role: "user" | "moderator" | "admin"
       violation_status: "active" | "overridden" | "expired" | "appealed"
       violation_type:
         | "profanity"
@@ -980,6 +983,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin"],
+      category_visibility: ["public", "pro", "elite"],
+      content_status: ["active", "locked", "removed"],
       membership_tier: ["free", "pro", "elite"],
       moderation_action: [
         "warning",
@@ -1003,6 +1008,7 @@ export const Constants = {
       ],
       report_status: ["pending", "reviewed", "resolved", "dismissed"],
       restriction_type: ["warning", "temp_restriction", "suspension"],
+      user_role: ["user", "moderator", "admin"],
       violation_status: ["active", "overridden", "expired", "appealed"],
       violation_type: [
         "profanity",
