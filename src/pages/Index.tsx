@@ -26,7 +26,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header 
         searchQuery={searchQuery} 
-        onSearchChange={setSearchQuery} 
+        onSearchChange={setSearchQuery}
+        selectedCategory={selectedCategory}
       />
 
       <main className="container mx-auto px-4 py-6">
