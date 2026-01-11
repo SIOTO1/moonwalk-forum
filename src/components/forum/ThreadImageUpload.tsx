@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { compressImage } from '@/lib/imageCompression';
 import { Button } from '@/components/ui/button';
 import { ImagePlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -50,12 +51,20 @@ export function ThreadImageUpload({
 
     try {
       for (const file of filesToUpload) {
-        const fileExt = file.name.split('.').pop();
+        // Compress image before upload
+        const compressedFile = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.85,
+          maxSizeKB: 500,
+        });
+
+        const fileExt = compressedFile.name.split('.').pop();
         const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('thread-images')
-          .upload(fileName, file);
+          .upload(fileName, compressedFile);
 
         if (uploadError) throw uploadError;
 
