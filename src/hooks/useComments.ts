@@ -16,6 +16,7 @@ export interface CommentWithAuthor {
   updated_at: string;
   author: {
     id: string;
+    user_id: string;
     username: string;
     display_name: string | null;
     avatar_url: string | null;
@@ -42,6 +43,7 @@ export function useComments(postId: string | null, sortBy: CommentSortOption = '
           *,
           author:profiles!comments_author_id_fkey(
             id,
+            user_id,
             username,
             display_name,
             avatar_url,

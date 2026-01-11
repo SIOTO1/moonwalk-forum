@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { useComments, useVote, useModeratePost } from '@/hooks/useComments';
+import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { CommentThread } from './CommentThread';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
+import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
@@ -65,6 +67,10 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
   const { data: comments = [], isLoading: commentsLoading } = useComments(post.id, commentSort);
   const vote = useVote();
   const moderatePost = useModeratePost();
+  
+  // Fetch author badges
+  const { data: authorBadges = [] } = useUserBadges(post.author?.user_id || null);
+  const badges: Badge[] = authorBadges.map(ub => ub.badge);
 
   // Track user's vote on this post
   const [userVote, setUserVote] = useState<1 | -1 | null>(null);
@@ -235,12 +241,15 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium">
                     {post.author?.display_name || post.author?.username || 'Unknown'}
                   </span>
                   {post.author?.membership_tier && post.author.membership_tier !== 'free' && (
                     <MembershipBadge tier={post.author.membership_tier} size="sm" />
+                  )}
+                  {badges.length > 0 && (
+                    <UserBadgesList badges={badges} size="sm" maxDisplay={3} />
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">

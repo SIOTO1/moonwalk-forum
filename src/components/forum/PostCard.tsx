@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { useVote } from '@/hooks/useComments';
+import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
+import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageCircle, Eye, Pin, CheckCircle2, Clock, ChevronUp, ChevronDown, Lock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +35,10 @@ interface PostCardProps {
 export function PostCard({ post, onSelect }: PostCardProps) {
   const { user } = useAuth();
   const vote = useVote();
+  
+  // Fetch author badges
+  const { data: authorBadges = [] } = useUserBadges(post.author?.user_id || null);
+  const badges: Badge[] = authorBadges.map(ub => ub.badge);
   
   const [userVote, setUserVote] = useState<1 | -1 | null>(null);
   const [localUpvotes, setLocalUpvotes] = useState(post.upvotes);
@@ -196,6 +202,9 @@ export function PostCard({ post, onSelect }: PostCardProps) {
               </span>
               {post.author?.membership_tier && post.author.membership_tier !== 'free' && (
                 <MembershipBadge tier={post.author.membership_tier} size="sm" />
+              )}
+              {badges.length > 0 && (
+                <UserBadgesList badges={badges} size="sm" maxDisplay={2} />
               )}
             </div>
 
