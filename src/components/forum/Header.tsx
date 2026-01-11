@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, Bell, Menu, X, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Bell, Menu, X, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,7 +18,7 @@ export function Header({ onSearchChange, searchQuery, selectedCategory }: Header
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
-  const { user, loading, canPost } = useAuth();
+  const { user, loading, canPost, canModerate } = useAuth();
 
   const openSignIn = () => {
     setAuthModalMode('signin');
@@ -66,6 +67,14 @@ export function Header({ onSearchChange, searchQuery, selectedCategory }: Header
                     <Bell className="w-5 h-5" />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
                   </Button>
+
+                  {canModerate && (
+                    <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
+                      <Link to="/moderation">
+                        <Shield className="w-5 h-5" />
+                      </Link>
+                    </Button>
+                  )}
 
                   {canPost && (
                     <div className="hidden sm:block">

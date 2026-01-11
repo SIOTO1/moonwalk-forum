@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CommentThread } from './CommentThread';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
+import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
@@ -353,10 +354,7 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
                   <Bookmark className="w-4 h-4 mr-1" />
                   Save
                 </Button>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
-                  <Flag className="w-4 h-4 mr-1" />
-                  Report
-                </Button>
+                <ReportDialog type="post" targetId={post.id} />
               </div>
             </div>
           </div>
