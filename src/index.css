@@ -20,9 +20,9 @@
     --primary: 222 47% 20%;
     --primary-foreground: 210 20% 95%;
 
-    /* Accent - Warm Amber/Gold */
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 6%;
+    /* Accent - Subtle Teal */
+    --accent: 173 58% 39%;
+    --accent-foreground: 0 0% 100%;
 
     --secondary: 222 30% 14%;
     --secondary-foreground: 210 20% 85%;
@@ -39,13 +39,13 @@
 
     --border: 222 30% 18%;
     --input: 222 30% 14%;
-    --ring: 38 92% 50%;
+    --ring: 173 58% 39%;
 
     --radius: 0.75rem;
 
     /* Forum-specific tokens */
-    --upvote: 38 92% 50%;
-    --downvote: 0 72% 51%;
+    --upvote: 173 58% 39%;
+    --downvote: 0 65% 51%;
     --badge-verified: 199 89% 48%;
     --badge-expert: 280 87% 65%;
     --badge-moderator: 142 76% 36%;
@@ -54,12 +54,12 @@
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-primary: 173 58% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 30% 14%;
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 222 30% 16%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 173 58% 39%;
   }
 
   .light {
@@ -75,8 +75,8 @@
     --primary: 222 47% 20%;
     --primary-foreground: 210 20% 98%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 6%;
+    --accent: 173 58% 39%;
+    --accent-foreground: 0 0% 100%;
 
     --secondary: 210 20% 94%;
     --secondary-foreground: 222 47% 20%;
@@ -92,16 +92,16 @@
 
     --border: 210 20% 88%;
     --input: 210 20% 90%;
-    --ring: 38 92% 50%;
+    --ring: 173 58% 39%;
 
     --sidebar-background: 210 20% 96%;
     --sidebar-foreground: 222 47% 20%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-primary: 173 58% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 92%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 210 20% 88%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 173 58% 39%;
   }
 }
 
@@ -178,12 +178,12 @@
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(38 92% 60%) 100%);
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(173 58% 45%) 100%);
   }
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(38 92% 65%) 100%);
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(173 58% 50%) 100%);
   }
 }
 
