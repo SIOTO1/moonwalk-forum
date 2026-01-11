@@ -89,7 +89,7 @@ export function PostCard({ post, onSelect }: PostCardProps) {
   const threadUrl = `/thread/${post.slug || post.id}`;
 
   return (
-    <Link to={threadUrl} className="block">
+    <Link to={threadUrl} className="block group">
       <article 
         className="forum-card p-4 cursor-pointer animate-fade-in"
         onClick={() => onSelect?.(post)}
@@ -163,7 +163,7 @@ export function PostCard({ post, onSelect }: PostCardProps) {
           </div>
 
           {/* Title */}
-          <h3 className="font-display font-semibold text-lg text-foreground hover:text-accent transition-colors line-clamp-2 mb-2">
+          <h3 className="font-display font-semibold text-lg text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 mb-2">
             {post.title}
           </h3>
 
