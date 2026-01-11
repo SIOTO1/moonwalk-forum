@@ -62,6 +62,7 @@ export type Database = {
           name: string
           post_count: number
           required_tier: Database["public"]["Enums"]["membership_tier"] | null
+          search_vector: unknown
           slug: string
           updated_at: string
         }
@@ -76,6 +77,7 @@ export type Database = {
           name: string
           post_count?: number
           required_tier?: Database["public"]["Enums"]["membership_tier"] | null
+          search_vector?: unknown
           slug: string
           updated_at?: string
         }
@@ -90,6 +92,7 @@ export type Database = {
           name?: string
           post_count?: number
           required_tier?: Database["public"]["Enums"]["membership_tier"] | null
+          search_vector?: unknown
           slug?: string
           updated_at?: string
         }
@@ -110,6 +113,7 @@ export type Database = {
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
+          search_vector: unknown
           updated_at: string
           upvotes: number
         }
@@ -127,6 +131,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          search_vector?: unknown
           updated_at?: string
           upvotes?: number
         }
@@ -144,6 +149,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          search_vector?: unknown
           updated_at?: string
           upvotes?: number
         }
@@ -259,6 +265,7 @@ export type Database = {
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
+          search_vector: unknown
           slug: string | null
           tags: string[] | null
           title: string
@@ -281,6 +288,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          search_vector?: unknown
           slug?: string | null
           tags?: string[] | null
           title: string
@@ -303,6 +311,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          search_vector?: unknown
           slug?: string | null
           tags?: string[] | null
           title?: string
@@ -675,6 +684,22 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_shadow_banned: { Args: { _user_id: string }; Returns: boolean }
+      search_forum: {
+        Args: { search_query: string }
+        Returns: {
+          author_username: string
+          category_name: string
+          category_slug: string
+          content: string
+          created_at: string
+          id: string
+          is_private: boolean
+          rank: number
+          result_type: string
+          slug: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
