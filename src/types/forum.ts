@@ -1,3 +1,6 @@
+// Forum-specific types (for mock data and UI)
+// Authentication types are in src/contexts/AuthContext.tsx
+
 export type UserRole = 'member' | 'verified_vendor' | 'industry_expert' | 'moderator' | 'admin';
 
 export type CategoryType = 'equipment' | 'business';
@@ -40,6 +43,7 @@ export interface Post {
   hasAcceptedAnswer: boolean;
   tags: string[];
   userVote?: 'up' | 'down' | null;
+  isPremium?: boolean; // Only visible to pro/elite members
 }
 
 export interface Comment {
