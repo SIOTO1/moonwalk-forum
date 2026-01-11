@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
-import { VoteButtons } from './VoteButtons';
+import { useComments, useVote, useModeratePost } from '@/hooks/useComments';
+import { useAuth } from '@/contexts/AuthContext';
+import { CommentThread } from './CommentThread';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   ArrowLeft, 
   Pin, 
@@ -15,6 +16,9 @@ import {
   Share2,
   Bookmark,
   Flag,
+  Lock,
+  ChevronUp,
+  ChevronDown,
   Rocket, 
   Shield, 
   Wrench, 
@@ -31,7 +35,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'rocket': Rocket,
@@ -55,36 +60,84 @@ interface PostDetailProps {
 }
 
 export function PostDetail({ post, onBack }: PostDetailProps) {
-  const { user } = useAuth();
-  const [localPost, setLocalPost] = useState(post);
-  const [newComment, setNewComment] = useState('');
+  const { user, canModerate } = useAuth();
+  const [commentSort, setCommentSort] = useState<'top' | 'newest'>('top');
+  const { data: comments = [], isLoading: commentsLoading } = useComments(post.id, commentSort);
+  const vote = useVote();
+  const moderatePost = useModeratePost();
 
-  const handleVote = (direction: 'up' | 'down') => {
-    setLocalPost(prev => {
-      let newUpvotes = prev.upvotes;
-      let newDownvotes = prev.downvotes;
+  // Track user's vote on this post
+  const [userVote, setUserVote] = useState<1 | -1 | null>(null);
+  const [localUpvotes, setLocalUpvotes] = useState(post.upvotes);
+  const [localDownvotes, setLocalDownvotes] = useState(post.downvotes);
 
-      if (direction === 'up') {
-        newUpvotes++;
+  const handleVote = async (voteType: 1 | -1) => {
+    if (!user) {
+      toast.error('Please sign in to vote');
+      return;
+    }
+    
+    try {
+      // Optimistic update
+      if (userVote === voteType) {
+        // Remove vote
+        if (voteType === 1) setLocalUpvotes(v => v - 1);
+        else setLocalDownvotes(v => v - 1);
+        setUserVote(null);
       } else {
-        newDownvotes++;
+        // Add or change vote
+        if (voteType === 1) {
+          setLocalUpvotes(v => v + 1);
+          if (userVote === -1) setLocalDownvotes(v => v - 1);
+        } else {
+          setLocalDownvotes(v => v + 1);
+          if (userVote === 1) setLocalUpvotes(v => v - 1);
+        }
+        setUserVote(voteType);
       }
 
-      return {
-        ...prev,
-        upvotes: newUpvotes,
-        downvotes: newDownvotes,
-      };
-    });
+      await vote.mutateAsync({
+        postId: post.id,
+        voteType,
+        currentVote: userVote,
+      });
+    } catch (error: any) {
+      // Revert on error
+      setLocalUpvotes(post.upvotes);
+      setLocalDownvotes(post.downvotes);
+      setUserVote(null);
+      toast.error(error.message || 'Failed to vote');
+    }
   };
 
-  const handleSubmitComment = () => {
-    if (!newComment.trim()) return;
-    // In real app, this would call an API
-    setNewComment('');
+  const handlePin = async () => {
+    try {
+      await moderatePost.mutateAsync({
+        postId: post.id,
+        action: 'pin',
+        value: !post.is_pinned,
+      });
+      toast.success(post.is_pinned ? 'Thread unpinned' : 'Thread pinned');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update pin status');
+    }
   };
 
-  const CategoryIcon = localPost.category?.icon ? iconMap[localPost.category.icon] : FileText;
+  const handleLock = async () => {
+    try {
+      await moderatePost.mutateAsync({
+        postId: post.id,
+        action: 'lock',
+        value: !post.is_locked,
+      });
+      toast.success(post.is_locked ? 'Thread unlocked' : 'Thread locked');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update lock status');
+    }
+  };
+
+  const score = localUpvotes - localDownvotes;
+  const CategoryIcon = post.category?.icon ? iconMap[post.category.icon] : FileText;
 
   return (
     <div className="flex-1 min-w-0 max-w-4xl mx-auto animate-fade-in">
@@ -102,38 +155,65 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
       <article className="forum-card p-6 mb-6">
         <div className="flex gap-6">
           {/* Vote Column */}
-          <div className="hidden sm:block">
-            <VoteButtons
-              upvotes={localPost.upvotes}
-              downvotes={localPost.downvotes}
-              userVote={null}
-              onVote={handleVote}
-            />
+          <div className="hidden sm:flex flex-col items-center gap-1">
+            <button
+              onClick={() => handleVote(1)}
+              className={cn(
+                "vote-button",
+                userVote === 1 && "upvoted"
+              )}
+              disabled={vote.isPending}
+            >
+              <ChevronUp className="w-6 h-6" />
+            </button>
+            <span className={cn(
+              "font-bold text-lg",
+              score > 0 && "text-accent",
+              score < 0 && "text-destructive"
+            )}>
+              {score}
+            </span>
+            <button
+              onClick={() => handleVote(-1)}
+              className={cn(
+                "vote-button",
+                userVote === -1 && "downvoted"
+              )}
+              disabled={vote.isPending}
+            >
+              <ChevronDown className="w-6 h-6" />
+            </button>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             {/* Header */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              {localPost.is_pinned && (
+              {post.is_pinned && (
                 <span className="inline-flex items-center gap-1 text-accent text-xs font-medium">
                   <Pin className="w-3 h-3" />
                   Pinned
                 </span>
               )}
-              {localPost.category && (
+              {post.is_locked && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground text-xs font-medium">
+                  <Lock className="w-3 h-3" />
+                  Locked
+                </span>
+              )}
+              {post.category && (
                 <span 
                   className="category-badge inline-flex items-center gap-1.5"
                   style={{ 
-                    backgroundColor: `${localPost.category.color}20`,
-                    color: localPost.category.color,
+                    backgroundColor: `${post.category.color}20`,
+                    color: post.category.color,
                   }}
                 >
                   <CategoryIcon className="w-3 h-3" />
-                  {localPost.category.name}
+                  {post.category.name}
                 </span>
               )}
-              {localPost.has_accepted_answer && (
+              {post.has_accepted_answer && (
                 <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
                   <CheckCircle2 className="w-3 h-3" />
                   Solved
@@ -143,32 +223,32 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
 
             {/* Title */}
             <h1 className="font-display font-bold text-2xl text-foreground mb-4">
-              {localPost.title}
+              {post.title}
             </h1>
 
             {/* Author */}
             <div className="flex items-center gap-3 mb-6">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={localPost.author?.avatar_url || undefined} />
+                <AvatarImage src={post.author?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {localPost.author?.display_name?.charAt(0) || localPost.author?.username?.charAt(0) || 'U'}
+                  {post.author?.display_name?.charAt(0) || post.author?.username?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">
-                    {localPost.author?.display_name || localPost.author?.username || 'Unknown'}
+                    {post.author?.display_name || post.author?.username || 'Unknown'}
                   </span>
-                  {localPost.author?.membership_tier && localPost.author.membership_tier !== 'free' && (
-                    <MembershipBadge tier={localPost.author.membership_tier} size="sm" />
+                  {post.author?.membership_tier && post.author.membership_tier !== 'free' && (
+                    <MembershipBadge tier={post.author.membership_tier} size="sm" />
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{localPost.author?.reputation?.toLocaleString() || 0} reputation</span>
+                  <span>{post.author?.reputation?.toLocaleString() || 0} reputation</span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {formatDistanceToNow(new Date(localPost.created_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
                 </div>
               </div>
@@ -176,7 +256,7 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
 
             {/* Content */}
             <div className="prose prose-invert prose-sm max-w-none mb-6">
-              {localPost.content.split('\n').map((paragraph, i) => (
+              {post.content.split('\n').map((paragraph, i) => (
                 <p key={i} className="text-foreground/90 leading-relaxed">
                   {paragraph}
                 </p>
@@ -184,9 +264,9 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
             </div>
 
             {/* Tags */}
-            {localPost.tags && localPost.tags.length > 0 && (
+            {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
-                {localPost.tags.map(tag => (
+                {post.tags.map(tag => (
                   <span 
                     key={tag}
                     className="px-3 py-1 bg-muted rounded-full text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
@@ -202,14 +282,60 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  {localPost.view_count} views
+                  {post.view_count} views
                 </span>
                 <span className="flex items-center gap-1">
                   <MessageCircle className="w-4 h-4" />
-                  {localPost.comment_count} comments
+                  {post.comment_count} comments
                 </span>
+                
+                {/* Mobile voting */}
+                <div className="sm:hidden flex items-center gap-2">
+                  <button
+                    onClick={() => handleVote(1)}
+                    className={cn("p-1", userVote === 1 && "text-accent")}
+                  >
+                    <ChevronUp className="w-5 h-5" />
+                  </button>
+                  <span className={cn(
+                    "font-semibold",
+                    score > 0 && "text-accent",
+                    score < 0 && "text-destructive"
+                  )}>
+                    {score}
+                  </span>
+                  <button
+                    onClick={() => handleVote(-1)}
+                    className={cn("p-1", userVote === -1 && "text-destructive")}
+                  >
+                    <ChevronDown className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
+              
               <div className="flex items-center gap-2">
+                {canModerate && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handlePin}
+                      className={post.is_pinned ? "text-accent" : ""}
+                    >
+                      <Pin className="w-4 h-4 mr-1" />
+                      {post.is_pinned ? 'Unpin' : 'Pin'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleLock}
+                      className={post.is_locked ? "text-destructive" : ""}
+                    >
+                      <Lock className="w-4 h-4 mr-1" />
+                      {post.is_locked ? 'Unlock' : 'Lock'}
+                    </Button>
+                  </>
+                )}
                 <Button variant="ghost" size="sm">
                   <Share2 className="w-4 h-4 mr-1" />
                   Share
@@ -228,43 +354,31 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
         </div>
       </article>
 
-      {/* Comment Form */}
-      {user ? (
-        <div className="forum-card p-4 mb-6">
-          <h3 className="font-display font-semibold mb-3">Add a Comment</h3>
-          <Textarea
-            placeholder="Share your thoughts or answer this question..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px] bg-secondary border-0 focus-visible:ring-accent mb-3"
-          />
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleSubmitComment}
-              className="gradient-accent text-accent-foreground"
-              disabled={!newComment.trim()}
-            >
-              Post Comment
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="forum-card p-4 mb-6 text-center text-muted-foreground">
-          Please sign in to add a comment.
+      {/* Locked Notice */}
+      {post.is_locked && (
+        <div className="forum-card p-4 mb-6 flex items-center gap-2 text-muted-foreground bg-muted/50">
+          <Lock className="w-4 h-4" />
+          <span>This thread has been locked. No new comments can be added.</span>
         </div>
       )}
 
-      {/* Comments placeholder */}
-      <div className="space-y-4">
-        <h3 className="font-display font-semibold">
-          {localPost.comment_count} {localPost.comment_count === 1 ? 'Comment' : 'Comments'}
-        </h3>
-        {localPost.comment_count === 0 && (
-          <div className="forum-card p-8 text-center text-muted-foreground">
-            No comments yet. Be the first to respond!
-          </div>
-        )}
-      </div>
+      {/* Comments Section */}
+      {commentsLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      ) : (
+        <CommentThread
+          comments={comments}
+          postId={post.id}
+          postAuthorId={post.author_id}
+          sortBy={commentSort}
+          onSortChange={setCommentSort}
+        />
+      )}
     </div>
   );
 }

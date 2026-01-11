@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { Search, Bell, Plus, Menu, X, User } from 'lucide-react';
+import { Search, Bell, Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { CreateThreadDialog } from './CreateThreadDialog';
 
 interface HeaderProps {
   onSearchChange: (query: string) => void;
   searchQuery: string;
+  selectedCategory?: string | null;
 }
 
-export function Header({ onSearchChange, searchQuery }: HeaderProps) {
+export function Header({ onSearchChange, searchQuery, selectedCategory }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
@@ -66,10 +68,9 @@ export function Header({ onSearchChange, searchQuery }: HeaderProps) {
                   </Button>
 
                   {canPost && (
-                    <Button className="hidden sm:flex gap-2 gradient-accent text-accent-foreground hover:opacity-90">
-                      <Plus className="w-4 h-4" />
-                      New Post
-                    </Button>
+                    <div className="hidden sm:block">
+                      <CreateThreadDialog defaultCategorySlug={selectedCategory} />
+                    </div>
                   )}
 
                   <UserMenu />

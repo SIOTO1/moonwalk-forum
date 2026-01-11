@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
-import { VoteButtons } from './VoteButtons';
+import { useVote } from '@/hooks/useComments';
+import { useAuth } from '@/contexts/AuthContext';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Eye, Pin, CheckCircle2, Clock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download } from 'lucide-react';
+import { MessageCircle, Eye, Pin, CheckCircle2, Clock, ChevronUp, ChevronDown, Lock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'rocket': Rocket,
@@ -29,42 +31,54 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onSelect }: PostCardProps) {
-  const [localPost, setLocalPost] = useState(post);
+  const { user } = useAuth();
+  const vote = useVote();
+  
+  const [userVote, setUserVote] = useState<1 | -1 | null>(null);
+  const [localUpvotes, setLocalUpvotes] = useState(post.upvotes);
+  const [localDownvotes, setLocalDownvotes] = useState(post.downvotes);
 
-  const handleVote = (direction: 'up' | 'down') => {
-    // For now, just update locally - will integrate with backend later
-    setLocalPost(prev => {
-      const wasUpvoted = false; // TODO: Track user vote in database
-      const wasDownvoted = false;
-      
-      let newUpvotes = prev.upvotes;
-      let newDownvotes = prev.downvotes;
-
-      if (direction === 'up') {
-        if (wasUpvoted) {
-          newUpvotes--;
-        } else {
-          newUpvotes++;
-          if (wasDownvoted) newDownvotes--;
-        }
+  const handleVote = async (e: React.MouseEvent, voteType: 1 | -1) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('Please sign in to vote');
+      return;
+    }
+    
+    try {
+      // Optimistic update
+      if (userVote === voteType) {
+        if (voteType === 1) setLocalUpvotes(v => v - 1);
+        else setLocalDownvotes(v => v - 1);
+        setUserVote(null);
       } else {
-        if (wasDownvoted) {
-          newDownvotes--;
+        if (voteType === 1) {
+          setLocalUpvotes(v => v + 1);
+          if (userVote === -1) setLocalDownvotes(v => v - 1);
         } else {
-          newDownvotes++;
-          if (wasUpvoted) newUpvotes--;
+          setLocalDownvotes(v => v + 1);
+          if (userVote === 1) setLocalUpvotes(v => v - 1);
         }
+        setUserVote(voteType);
       }
 
-      return {
-        ...prev,
-        upvotes: newUpvotes,
-        downvotes: newDownvotes,
-      };
-    });
+      await vote.mutateAsync({
+        postId: post.id,
+        voteType,
+        currentVote: userVote,
+      });
+    } catch (error: any) {
+      // Revert on error
+      setLocalUpvotes(post.upvotes);
+      setLocalDownvotes(post.downvotes);
+      setUserVote(null);
+      toast.error(error.message || 'Failed to vote');
+    }
   };
 
-  const CategoryIcon = localPost.category?.icon ? iconMap[localPost.category.icon] : FileText;
+  const score = localUpvotes - localDownvotes;
+  const CategoryIcon = post.category?.icon ? iconMap[post.category.icon] : FileText;
 
   return (
     <article 
@@ -73,38 +87,65 @@ export function PostCard({ post, onSelect }: PostCardProps) {
     >
       <div className="flex gap-4">
         {/* Vote Column */}
-        <div className="hidden sm:block" onClick={e => e.stopPropagation()}>
-          <VoteButtons
-            upvotes={localPost.upvotes}
-            downvotes={localPost.downvotes}
-            userVote={null}
-            onVote={handleVote}
-          />
+        <div className="hidden sm:flex flex-col items-center gap-1" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={(e) => handleVote(e, 1)}
+            className={cn(
+              "vote-button",
+              userVote === 1 && "upvoted"
+            )}
+            disabled={vote.isPending}
+          >
+            <ChevronUp className="w-5 h-5" />
+          </button>
+          <span className={cn(
+            "font-semibold text-sm",
+            score > 0 && "text-accent",
+            score < 0 && "text-destructive"
+          )}>
+            {score}
+          </span>
+          <button
+            onClick={(e) => handleVote(e, -1)}
+            className={cn(
+              "vote-button",
+              userVote === -1 && "downvoted"
+            )}
+            disabled={vote.isPending}
+          >
+            <ChevronDown className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            {localPost.is_pinned && (
+            {post.is_pinned && (
               <span className="inline-flex items-center gap-1 text-accent text-xs font-medium">
                 <Pin className="w-3 h-3" />
                 Pinned
               </span>
             )}
-            {localPost.category && (
+            {post.is_locked && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground text-xs font-medium">
+                <Lock className="w-3 h-3" />
+                Locked
+              </span>
+            )}
+            {post.category && (
               <span 
                 className="category-badge inline-flex items-center gap-1.5"
                 style={{ 
-                  backgroundColor: `${localPost.category.color}20`,
-                  color: localPost.category.color,
+                  backgroundColor: `${post.category.color}20`,
+                  color: post.category.color,
                 }}
               >
                 <CategoryIcon className="w-3 h-3" />
-                {localPost.category.name}
+                {post.category.name}
               </span>
             )}
-            {localPost.has_accepted_answer && (
+            {post.has_accepted_answer && (
               <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
                 <CheckCircle2 className="w-3 h-3" />
                 Solved
@@ -114,18 +155,18 @@ export function PostCard({ post, onSelect }: PostCardProps) {
 
           {/* Title */}
           <h3 className="font-display font-semibold text-lg text-foreground hover:text-accent transition-colors line-clamp-2 mb-2">
-            {localPost.title}
+            {post.title}
           </h3>
 
           {/* Preview */}
           <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-            {localPost.content}
+            {post.content}
           </p>
 
           {/* Tags */}
-          {localPost.tags && localPost.tags.length > 0 && (
+          {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {localPost.tags.slice(0, 3).map(tag => (
+              {post.tags.slice(0, 3).map(tag => (
                 <span 
                   key={tag}
                   className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground"
@@ -133,9 +174,9 @@ export function PostCard({ post, onSelect }: PostCardProps) {
                   #{tag}
                 </span>
               ))}
-              {localPost.tags.length > 3 && (
+              {post.tags.length > 3 && (
                 <span className="text-xs text-muted-foreground">
-                  +{localPost.tags.length - 3} more
+                  +{post.tags.length - 3} more
                 </span>
               )}
             </div>
@@ -145,43 +186,55 @@ export function PostCard({ post, onSelect }: PostCardProps) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Avatar className="w-5 h-5">
-                <AvatarImage src={localPost.author?.avatar_url || undefined} />
+                <AvatarImage src={post.author?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {localPost.author?.display_name?.charAt(0) || localPost.author?.username?.charAt(0) || 'U'}
+                  {post.author?.display_name?.charAt(0) || post.author?.username?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <span className="font-medium text-foreground">
-                {localPost.author?.display_name || localPost.author?.username || 'Unknown'}
+                {post.author?.display_name || post.author?.username || 'Unknown'}
               </span>
-              {localPost.author?.membership_tier && localPost.author.membership_tier !== 'free' && (
-                <MembershipBadge tier={localPost.author.membership_tier} size="sm" />
+              {post.author?.membership_tier && post.author.membership_tier !== 'free' && (
+                <MembershipBadge tier={post.author.membership_tier} size="sm" />
               )}
             </div>
 
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
-                {formatDistanceToNow(new Date(localPost.created_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </span>
               <span className="flex items-center gap-1">
                 <MessageCircle className="w-3.5 h-3.5" />
-                {localPost.comment_count}
+                {post.comment_count}
               </span>
               <span className="flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5" />
-                {localPost.view_count}
+                {post.view_count}
               </span>
             </div>
 
             {/* Mobile Votes */}
-            <div className="sm:hidden flex items-center" onClick={e => e.stopPropagation()}>
-              <VoteButtons
-                upvotes={localPost.upvotes}
-                downvotes={localPost.downvotes}
-                userVote={null}
-                onVote={handleVote}
-                layout="horizontal"
-              />
+            <div className="sm:hidden flex items-center gap-2" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={(e) => handleVote(e, 1)}
+                className={cn("p-1", userVote === 1 && "text-accent")}
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+              <span className={cn(
+                "font-semibold text-xs",
+                score > 0 && "text-accent",
+                score < 0 && "text-destructive"
+              )}>
+                {score}
+              </span>
+              <button
+                onClick={(e) => handleVote(e, -1)}
+                className={cn("p-1", userVote === -1 && "text-destructive")}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
