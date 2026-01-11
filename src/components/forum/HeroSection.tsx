@@ -26,25 +26,24 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
 
   return (
     <section className="relative overflow-hidden mb-8">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/5 -z-10" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl -z-10" />
+      {/* Subtle background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
       
       <div className="py-12 md:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           {/* Left Content */}
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 text-success text-sm font-medium">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
               </span>
               234 members online now
             </div>
 
             <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
               The #1 Community for{' '}
-              <span className="text-gradient">Party Rental</span>{' '}
+              <span className="text-primary">Party Rental</span>{' '}
               Professionals
             </h1>
 
@@ -55,7 +54,7 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 size="lg" 
-                className="gradient-accent text-accent-foreground gap-2 text-base"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-base"
                 onClick={onOpenSignUp}
               >
                 Join Free Today
@@ -87,10 +86,10 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
               {stats.map(({ icon: Icon, label, value }) => (
                 <div 
                   key={label}
-                  className="forum-card p-6 text-center hover:border-accent/50 transition-colors"
+                  className="forum-card p-6 text-center hover:border-primary/30 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
-                    <Icon className="w-6 h-6 text-accent" />
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Icon className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-2xl font-display font-bold text-foreground">{value}</p>
                   <p className="text-sm text-muted-foreground">{label}</p>
