@@ -184,6 +184,98 @@ export type Database = {
           },
         ]
       }
+      conduct_agreements: {
+        Row: {
+          agreed_at: string
+          id: string
+          ip_address: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          agreed_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id: string
+          version?: string
+        }
+        Update: {
+          agreed_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conduct_agreements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      content_violations: {
+        Row: {
+          content_preview: string
+          created_at: string
+          detected_terms: string[] | null
+          expires_at: string | null
+          id: string
+          overridden_by: string | null
+          override_reason: string | null
+          restriction_type: Database["public"]["Enums"]["restriction_type"]
+          status: Database["public"]["Enums"]["violation_status"]
+          strike_number: number
+          user_id: string
+          violation_type: Database["public"]["Enums"]["violation_type"]
+        }
+        Insert: {
+          content_preview: string
+          created_at?: string
+          detected_terms?: string[] | null
+          expires_at?: string | null
+          id?: string
+          overridden_by?: string | null
+          override_reason?: string | null
+          restriction_type: Database["public"]["Enums"]["restriction_type"]
+          status?: Database["public"]["Enums"]["violation_status"]
+          strike_number?: number
+          user_id: string
+          violation_type: Database["public"]["Enums"]["violation_type"]
+        }
+        Update: {
+          content_preview?: string
+          created_at?: string
+          detected_terms?: string[] | null
+          expires_at?: string | null
+          id?: string
+          overridden_by?: string | null
+          override_reason?: string | null
+          restriction_type?: Database["public"]["Enums"]["restriction_type"]
+          status?: Database["public"]["Enums"]["violation_status"]
+          strike_number?: number
+          user_id?: string
+          violation_type?: Database["public"]["Enums"]["violation_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_violations_overridden_by_fkey"
+            columns: ["overridden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_violations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       moderation_logs: {
         Row: {
           action: Database["public"]["Enums"]["moderation_action"]
@@ -352,10 +444,13 @@ export type Database = {
           email_verified: boolean
           id: string
           is_banned: boolean
+          is_restricted: boolean
           membership_tier: Database["public"]["Enums"]["membership_tier"]
           post_count: number
           reply_count: number
           reputation: number
+          restriction_expires_at: string | null
+          strike_count: number
           updated_at: string
           user_id: string
           username: string
@@ -368,10 +463,13 @@ export type Database = {
           email_verified?: boolean
           id?: string
           is_banned?: boolean
+          is_restricted?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
           post_count?: number
           reply_count?: number
           reputation?: number
+          restriction_expires_at?: string | null
+          strike_count?: number
           updated_at?: string
           user_id: string
           username: string
@@ -384,10 +482,13 @@ export type Database = {
           email_verified?: boolean
           id?: string
           is_banned?: boolean
+          is_restricted?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
           post_count?: number
           reply_count?: number
           reputation?: number
+          restriction_expires_at?: string | null
+          strike_count?: number
           updated_at?: string
           user_id?: string
           username?: string
@@ -660,6 +761,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_content_strike: {
+        Args: {
+          _content_preview: string
+          _detected_terms: string[]
+          _user_id: string
+          _violation_type: Database["public"]["Enums"]["violation_type"]
+        }
+        Returns: {
+          message: string
+          restriction_type: Database["public"]["Enums"]["restriction_type"]
+          strike_number: number
+        }[]
+      }
       can_access_category: {
         Args: { _category_id: string; _user_id: string }
         Returns: boolean
@@ -671,10 +785,12 @@ export type Database = {
         Args: { _activity_type: string; _user_id: string }
         Returns: boolean
       }
+      get_active_strike_count: { Args: { _user_id: string }; Returns: number }
       get_membership_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["membership_tier"]
       }
+      has_agreed_to_conduct: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -684,6 +800,10 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_shadow_banned: { Args: { _user_id: string }; Returns: boolean }
+      override_violation: {
+        Args: { _moderator_id: string; _reason: string; _violation_id: string }
+        Returns: boolean
+      }
       search_forum: {
         Args: { search_query: string }
         Returns: {
@@ -723,6 +843,15 @@ export type Database = {
         | "off_topic"
         | "other"
       report_status: "pending" | "reviewed" | "resolved" | "dismissed"
+      restriction_type: "warning" | "temp_restriction" | "suspension"
+      violation_status: "active" | "overridden" | "expired" | "appealed"
+      violation_type:
+        | "profanity"
+        | "hate_speech"
+        | "threats"
+        | "harassment"
+        | "personal_attack"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -873,6 +1002,16 @@ export const Constants = {
         "other",
       ],
       report_status: ["pending", "reviewed", "resolved", "dismissed"],
+      restriction_type: ["warning", "temp_restriction", "suspension"],
+      violation_status: ["active", "overridden", "expired", "appealed"],
+      violation_type: [
+        "profanity",
+        "hate_speech",
+        "threats",
+        "harassment",
+        "personal_attack",
+        "other",
+      ],
     },
   },
 } as const

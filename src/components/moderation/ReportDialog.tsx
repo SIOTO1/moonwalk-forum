@@ -24,12 +24,12 @@ interface ReportDialogProps {
   trigger?: React.ReactNode;
 }
 
-const reportReasons: { value: ReportReason; label: string; description: string }[] = [
+const reportReasons: { value: ReportReason; label: string; description: string; priority?: boolean }[] = [
+  { value: 'harassment', label: 'Harassment or Bullying', description: 'Personal attacks, threats, intimidation, or targeting individuals', priority: true },
   { value: 'spam', label: 'Spam', description: 'Unwanted promotional content or repetitive posts' },
-  { value: 'harassment', label: 'Harassment', description: 'Bullying, threats, or personal attacks' },
   { value: 'misinformation', label: 'Misinformation', description: 'False or misleading information' },
   { value: 'unsafe_advice', label: 'Unsafe Advice', description: 'Potentially dangerous or harmful recommendations' },
-  { value: 'inappropriate', label: 'Inappropriate', description: 'Content that violates community guidelines' },
+  { value: 'inappropriate', label: 'Inappropriate Language', description: 'Profanity, hate speech, or abusive language' },
   { value: 'off_topic', label: 'Off Topic', description: 'Content not relevant to the discussion' },
   { value: 'other', label: 'Other', description: 'Specify your reason below' },
 ];
@@ -107,15 +107,24 @@ export function ReportDialog({ type, targetId, trigger }: ReportDialogProps) {
                   className={cn(
                     "flex items-start space-x-3 p-3 rounded-lg border transition-colors cursor-pointer",
                     reason === item.value
-                      ? "border-accent bg-accent/10"
-                      : "border-border hover:border-muted-foreground/50"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-muted-foreground/50",
+                    item.priority && "ring-1 ring-destructive/20"
                   )}
                   onClick={() => setReason(item.value)}
                 >
                   <RadioGroupItem value={item.value} id={item.value} className="mt-0.5" />
                   <div className="flex-1">
-                    <Label htmlFor={item.value} className="font-medium cursor-pointer">
+                    <Label htmlFor={item.value} className={cn(
+                      "font-medium cursor-pointer",
+                      item.priority && "text-destructive"
+                    )}>
                       {item.label}
+                      {item.priority && (
+                        <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+                          Priority
+                        </span>
+                      )}
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {item.description}

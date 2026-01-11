@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreatePost } from '@/hooks/usePosts';
+import { useContentModeration } from '@/hooks/useContentModeration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, X, Lock } from 'lucide-react';
+import { ContentViolationWarning } from '@/components/moderation/ContentViolationWarning';
+import { Plus, X, Lock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CreateThreadDialogProps {
@@ -31,6 +33,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
   const { user, canPost, canAccessPremium, profile } = useAuth();
   const { data: categories = [] } = useCategories();
   const createPost = useCreatePost();
+  const { validateContent, checkOnly, isChecking } = useContentModeration();
   
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -38,6 +41,16 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
   const [categoryId, setCategoryId] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  
+  // Content moderation states
+  const [showViolationWarning, setShowViolationWarning] = useState(false);
+  const [violationData, setViolationData] = useState<{
+    violationType: string;
+    message: string;
+    strikeNumber: number;
+    restrictionType: 'warning' | 'temp_restriction' | 'suspension';
+  } | null>(null);
+  const [contentWarning, setContentWarning] = useState<string | null>(null);
 
   // Filter accessible categories
   const accessibleCategories = categories.filter(cat => {
@@ -69,9 +82,45 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
     setTags(tags.filter(t => t !== tag));
   };
 
+  // Real-time content check for warnings
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    const check = checkOnly(newContent);
+    if (check.isViolation) {
+      setContentWarning(check.message);
+    } else {
+      setContentWarning(null);
+    }
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    const check = checkOnly(newTitle);
+    if (check.isViolation) {
+      setContentWarning(check.message);
+    } else if (!checkOnly(content).isViolation) {
+      setContentWarning(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || !categoryId) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Validate content before submission
+    const fullContent = `${title} ${content}`;
+    const result = await validateContent(fullContent);
+
+    if (!result.allowed) {
+      setViolationData({
+        violationType: result.violationType || 'other',
+        message: result.message,
+        strikeNumber: result.strikeNumber || 1,
+        restrictionType: result.restrictionType || 'warning',
+      });
+      setShowViolationWarning(true);
       return;
     }
 
@@ -89,6 +138,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
       setContent('');
       setCategoryId('');
       setTags([]);
+      setContentWarning(null);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create thread');
     }
@@ -147,7 +197,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="What's your question or topic?"
               maxLength={200}
             />
@@ -162,11 +212,19 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
             <Textarea
               id="content"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => handleContentChange(e.target.value)}
               placeholder="Provide details, context, or ask your question..."
               className="min-h-[150px]"
             />
           </div>
+
+          {/* Content Warning */}
+          {contentWarning && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-amber-700 dark:text-amber-400">{contentWarning}</p>
+            </div>
+          )}
 
           {/* Tags */}
           <div className="space-y-2">
@@ -225,14 +283,26 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
             </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={createPost.isPending || !title.trim() || !content.trim() || !categoryId}
-              className="gradient-accent text-accent-foreground"
+              disabled={createPost.isPending || isChecking || !title.trim() || !content.trim() || !categoryId || !!contentWarning}
+              className="bg-primary text-primary-foreground"
             >
-              {createPost.isPending ? 'Creating...' : 'Create Thread'}
+              {createPost.isPending || isChecking ? 'Creating...' : 'Create Thread'}
             </Button>
           </div>
         </div>
       </DialogContent>
+
+      {/* Violation Warning Modal */}
+      {violationData && (
+        <ContentViolationWarning
+          isOpen={showViolationWarning}
+          onClose={() => setShowViolationWarning(false)}
+          violationType={violationData.violationType}
+          message={violationData.message}
+          strikeNumber={violationData.strikeNumber}
+          restrictionType={violationData.restrictionType}
+        />
+      )}
     </Dialog>
   );
 }
