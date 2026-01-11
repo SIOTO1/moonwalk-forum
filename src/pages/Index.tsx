@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Header } from '@/components/forum/Header';
 import { CategorySidebar } from '@/components/forum/CategorySidebar';
 import { PostList } from '@/components/forum/PostList';
 import { PostDetail } from '@/components/forum/PostDetail';
 import { TrendingTopics } from '@/components/forum/TrendingTopics';
-import { mockCategories, mockPosts } from '@/data/mockData';
-import { Post } from '@/types/forum';
+import { useCategories } from '@/hooks/useCategories';
+import { usePosts, PostWithAuthor } from '@/hooks/usePosts';
 
 type SortOption = 'popular' | 'newest' | 'unanswered';
 
@@ -13,45 +13,14 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostWithAuthor | null>(null);
 
-  const filteredPosts = useMemo(() => {
-    let posts = [...mockPosts];
-
-    // Filter by category
-    if (selectedCategory) {
-      posts = posts.filter(post => post.category.slug === selectedCategory);
-    }
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      posts = posts.filter(post => 
-        post.title.toLowerCase().includes(query) ||
-        post.content.toLowerCase().includes(query) ||
-        post.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'popular':
-        posts.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
-        break;
-      case 'newest':
-        posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        break;
-      case 'unanswered':
-        posts = posts.filter(post => !post.hasAcceptedAnswer);
-        posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        break;
-    }
-
-    // Pinned posts always first
-    const pinned = posts.filter(p => p.isPinned);
-    const unpinned = posts.filter(p => !p.isPinned);
-    return [...pinned, ...unpinned];
-  }, [selectedCategory, searchQuery, sortBy]);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: posts = [], isLoading: postsLoading } = usePosts({
+    categorySlug: selectedCategory,
+    sortBy,
+    searchQuery,
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,9 +34,10 @@ const Index = () => {
           {/* Left Sidebar - Categories */}
           {!selectedPost && (
             <CategorySidebar
-              categories={mockCategories}
+              categories={categories}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
+              isLoading={categoriesLoading}
             />
           )}
 
@@ -80,10 +50,11 @@ const Index = () => {
           ) : (
             <>
               <PostList
-                posts={filteredPosts}
+                posts={posts}
                 onSelectPost={setSelectedPost}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
+                isLoading={postsLoading}
               />
               
               {/* Right Sidebar - Trending */}

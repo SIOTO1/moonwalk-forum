@@ -1,33 +1,48 @@
 import { useState } from 'react';
-import { Post } from '@/types/forum';
+import { PostWithAuthor } from '@/hooks/usePosts';
 import { VoteButtons } from './VoteButtons';
-import { AuthorityBadge } from './AuthorityBadge';
+import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Eye, Pin, CheckCircle2, Clock } from 'lucide-react';
+import { MessageCircle, Eye, Pin, CheckCircle2, Clock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  'rocket': Rocket,
+  'shield': Shield,
+  'wrench': Wrench,
+  'file-text': FileText,
+  'trending-up': TrendingUp,
+  'users': Users,
+  'alert-triangle': AlertTriangle,
+  'map-pin': MapPin,
+  'message-circle': MessageCircleIcon,
+  'star': Star,
+  'crown': Crown,
+  'shield-check': ShieldCheck,
+  'download': Download,
+};
+
 interface PostCardProps {
-  post: Post;
-  onSelect: (post: Post) => void;
+  post: PostWithAuthor;
+  onSelect: (post: PostWithAuthor) => void;
 }
 
 export function PostCard({ post, onSelect }: PostCardProps) {
   const [localPost, setLocalPost] = useState(post);
 
   const handleVote = (direction: 'up' | 'down') => {
+    // For now, just update locally - will integrate with backend later
     setLocalPost(prev => {
-      const wasUpvoted = prev.userVote === 'up';
-      const wasDownvoted = prev.userVote === 'down';
+      const wasUpvoted = false; // TODO: Track user vote in database
+      const wasDownvoted = false;
       
       let newUpvotes = prev.upvotes;
       let newDownvotes = prev.downvotes;
-      let newUserVote: 'up' | 'down' | null = direction;
 
       if (direction === 'up') {
         if (wasUpvoted) {
           newUpvotes--;
-          newUserVote = null;
         } else {
           newUpvotes++;
           if (wasDownvoted) newDownvotes--;
@@ -35,7 +50,6 @@ export function PostCard({ post, onSelect }: PostCardProps) {
       } else {
         if (wasDownvoted) {
           newDownvotes--;
-          newUserVote = null;
         } else {
           newDownvotes++;
           if (wasUpvoted) newUpvotes--;
@@ -46,10 +60,11 @@ export function PostCard({ post, onSelect }: PostCardProps) {
         ...prev,
         upvotes: newUpvotes,
         downvotes: newDownvotes,
-        userVote: newUserVote,
       };
     });
   };
+
+  const CategoryIcon = localPost.category?.icon ? iconMap[localPost.category.icon] : FileText;
 
   return (
     <article 
@@ -62,7 +77,7 @@ export function PostCard({ post, onSelect }: PostCardProps) {
           <VoteButtons
             upvotes={localPost.upvotes}
             downvotes={localPost.downvotes}
-            userVote={localPost.userVote}
+            userVote={null}
             onVote={handleVote}
           />
         </div>
@@ -71,21 +86,25 @@ export function PostCard({ post, onSelect }: PostCardProps) {
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            {localPost.isPinned && (
+            {localPost.is_pinned && (
               <span className="inline-flex items-center gap-1 text-accent text-xs font-medium">
                 <Pin className="w-3 h-3" />
                 Pinned
               </span>
             )}
-            <span className={cn(
-              "category-badge",
-              localPost.category.type === 'equipment' 
-                ? "bg-category-equipment/15 text-category-equipment"
-                : "bg-category-business/15 text-category-business"
-            )}>
-              {localPost.category.icon} {localPost.category.name}
-            </span>
-            {localPost.hasAcceptedAnswer && (
+            {localPost.category && (
+              <span 
+                className="category-badge inline-flex items-center gap-1.5"
+                style={{ 
+                  backgroundColor: `${localPost.category.color}20`,
+                  color: localPost.category.color,
+                }}
+              >
+                <CategoryIcon className="w-3 h-3" />
+                {localPost.category.name}
+              </span>
+            )}
+            {localPost.has_accepted_answer && (
               <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
                 <CheckCircle2 className="w-3 h-3" />
                 Solved
@@ -104,7 +123,7 @@ export function PostCard({ post, onSelect }: PostCardProps) {
           </p>
 
           {/* Tags */}
-          {localPost.tags.length > 0 && (
+          {localPost.tags && localPost.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
               {localPost.tags.slice(0, 3).map(tag => (
                 <span 
@@ -126,27 +145,31 @@ export function PostCard({ post, onSelect }: PostCardProps) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Avatar className="w-5 h-5">
-                <AvatarImage src={localPost.author.avatar} />
-                <AvatarFallback>{localPost.author.displayName.charAt(0)}</AvatarFallback>
+                <AvatarImage src={localPost.author?.avatar_url || undefined} />
+                <AvatarFallback>
+                  {localPost.author?.display_name?.charAt(0) || localPost.author?.username?.charAt(0) || 'U'}
+                </AvatarFallback>
               </Avatar>
               <span className="font-medium text-foreground">
-                {localPost.author.displayName}
+                {localPost.author?.display_name || localPost.author?.username || 'Unknown'}
               </span>
-              <AuthorityBadge role={localPost.author.role} size="sm" />
+              {localPost.author?.membership_tier && localPost.author.membership_tier !== 'free' && (
+                <MembershipBadge tier={localPost.author.membership_tier} size="sm" />
+              )}
             </div>
 
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
-                {formatDistanceToNow(localPost.createdAt, { addSuffix: true })}
+                {formatDistanceToNow(new Date(localPost.created_at), { addSuffix: true })}
               </span>
               <span className="flex items-center gap-1">
                 <MessageCircle className="w-3.5 h-3.5" />
-                {localPost.commentCount}
+                {localPost.comment_count}
               </span>
               <span className="flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5" />
-                {localPost.views}
+                {localPost.view_count}
               </span>
             </div>
 
@@ -155,7 +178,7 @@ export function PostCard({ post, onSelect }: PostCardProps) {
               <VoteButtons
                 upvotes={localPost.upvotes}
                 downvotes={localPost.downvotes}
-                userVote={localPost.userVote}
+                userVote={null}
                 onVote={handleVote}
                 layout="horizontal"
               />

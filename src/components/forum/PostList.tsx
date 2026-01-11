@@ -1,24 +1,61 @@
-import { Post } from '@/types/forum';
+import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/button';
 import { Flame, Clock, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type SortOption = 'popular' | 'newest' | 'unanswered';
 
 interface PostListProps {
-  posts: Post[];
-  onSelectPost: (post: Post) => void;
+  posts: PostWithAuthor[];
+  onSelectPost: (post: PostWithAuthor) => void;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
+  isLoading?: boolean;
 }
 
-export function PostList({ posts, onSelectPost, sortBy, onSortChange }: PostListProps) {
+export function PostList({ posts, onSelectPost, sortBy, onSortChange, isLoading = false }: PostListProps) {
   const sortOptions: { value: SortOption; label: string; icon: typeof Flame }[] = [
     { value: 'popular', label: 'Popular', icon: Flame },
     { value: 'newest', label: 'Newest', icon: Clock },
     { value: 'unanswered', label: 'Unanswered', icon: HelpCircle },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-4">
+          {sortOptions.map(option => (
+            <Skeleton key={option.value} className="h-8 w-24" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="forum-card p-4">
+              <div className="flex gap-4">
+                <Skeleton className="w-10 h-20 hidden sm:block" />
+                <div className="flex-1 space-y-3">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 min-w-0">

@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string
+          id: string
+          is_private: boolean
+          name: string
+          post_count: number
+          required_tier: Database["public"]["Enums"]["membership_tier"] | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string
+          id?: string
+          is_private?: boolean
+          name: string
+          post_count?: number
+          required_tier?: Database["public"]["Enums"]["membership_tier"] | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string
+          id?: string
+          is_private?: boolean
+          name?: string
+          post_count?: number
+          required_tier?: Database["public"]["Enums"]["membership_tier"] | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          author_id: string
+          category_id: string
+          comment_count: number
+          content: string
+          created_at: string
+          downvotes: number
+          has_accepted_answer: boolean
+          id: string
+          is_locked: boolean
+          is_pinned: boolean
+          tags: string[] | null
+          title: string
+          updated_at: string
+          upvotes: number
+          view_count: number
+        }
+        Insert: {
+          author_id: string
+          category_id: string
+          comment_count?: number
+          content: string
+          created_at?: string
+          downvotes?: number
+          has_accepted_answer?: boolean
+          id?: string
+          is_locked?: boolean
+          is_pinned?: boolean
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          upvotes?: number
+          view_count?: number
+        }
+        Update: {
+          author_id?: string
+          category_id?: string
+          comment_count?: number
+          content?: string
+          created_at?: string
+          downvotes?: number
+          has_accepted_answer?: boolean
+          id?: string
+          is_locked?: boolean
+          is_pinned?: boolean
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          upvotes?: number
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -85,6 +192,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_category: {
+        Args: { _category_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_premium: { Args: { _user_id: string }; Returns: boolean }
       can_moderate: { Args: { _user_id: string }; Returns: boolean }
       can_post: { Args: { _user_id: string }; Returns: boolean }
