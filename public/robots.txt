@@ -1,14 +1,28 @@
 User-agent: Googlebot
 Allow: /
+Allow: /thread/*
+Disallow: /search
+Disallow: /moderation
 
 User-agent: Bingbot
 Allow: /
+Allow: /thread/*
+Disallow: /search
+Disallow: /moderation
 
 User-agent: Twitterbot
 Allow: /
+Allow: /thread/*
 
 User-agent: facebookexternalhit
 Allow: /
+Allow: /thread/*
 
 User-agent: *
 Allow: /
+Allow: /thread/*
+Disallow: /search
+Disallow: /moderation
+
+# Private content is excluded via noindex meta tags
+# Search pages are not indexed

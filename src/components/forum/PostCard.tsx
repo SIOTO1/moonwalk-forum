@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { useVote } from '@/hooks/useComments';
 import { useUserBadges, Badge } from '@/hooks/useBadges';
@@ -29,7 +30,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 interface PostCardProps {
   post: PostWithAuthor;
-  onSelect: (post: PostWithAuthor) => void;
+  onSelect?: (post: PostWithAuthor) => void;
 }
 
 export function PostCard({ post, onSelect }: PostCardProps) {
@@ -85,13 +86,15 @@ export function PostCard({ post, onSelect }: PostCardProps) {
 
   const score = localUpvotes - localDownvotes;
   const CategoryIcon = post.category?.icon ? iconMap[post.category.icon] : FileText;
+  const threadUrl = `/thread/${post.slug || post.id}`;
 
   return (
-    <article 
-      className="forum-card p-4 cursor-pointer animate-fade-in"
-      onClick={() => onSelect(post)}
-    >
-      <div className="flex gap-4">
+    <Link to={threadUrl} className="block">
+      <article 
+        className="forum-card p-4 cursor-pointer animate-fade-in"
+        onClick={() => onSelect?.(post)}
+      >
+        <div className="flex gap-4">
         {/* Vote Column */}
         <div className="hidden sm:flex flex-col items-center gap-1" onClick={e => e.stopPropagation()}>
           <button
@@ -247,7 +250,8 @@ export function PostCard({ post, onSelect }: PostCardProps) {
             </div>
           </div>
         </div>
-      </div>
-    </article>
+        </div>
+      </article>
+    </Link>
   );
 }

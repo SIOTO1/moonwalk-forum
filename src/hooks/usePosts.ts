@@ -15,6 +15,7 @@ export interface PostWithAuthor {
   id: string;
   title: string;
   content: string;
+  slug: string | null;
   author_id: string;
   category_id: string;
   is_pinned: boolean;
@@ -64,7 +65,22 @@ export function usePosts(options: UsePostsOptions = {}) {
       let query = supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          title,
+          content,
+          slug,
+          author_id,
+          category_id,
+          is_pinned,
+          is_locked,
+          view_count,
+          upvotes,
+          downvotes,
+          comment_count,
+          has_accepted_answer,
+          tags,
+          created_at,
+          updated_at,
           author:profiles!posts_author_id_fkey(
             id,
             user_id,
@@ -136,7 +152,22 @@ export function usePost(postId: string | null) {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          title,
+          content,
+          slug,
+          author_id,
+          category_id,
+          is_pinned,
+          is_locked,
+          view_count,
+          upvotes,
+          downvotes,
+          comment_count,
+          has_accepted_answer,
+          tags,
+          created_at,
+          updated_at,
           author:profiles!posts_author_id_fkey(
             id,
             user_id,
