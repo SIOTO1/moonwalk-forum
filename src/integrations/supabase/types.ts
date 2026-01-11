@@ -104,8 +104,12 @@ export type Database = {
           downvotes: number
           id: string
           is_accepted: boolean
+          is_removed: boolean
           parent_id: string | null
           post_id: string
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           updated_at: string
           upvotes: number
         }
@@ -117,8 +121,12 @@ export type Database = {
           downvotes?: number
           id?: string
           is_accepted?: boolean
+          is_removed?: boolean
           parent_id?: string | null
           post_id: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
           upvotes?: number
         }
@@ -130,8 +138,12 @@ export type Database = {
           downvotes?: number
           id?: string
           is_accepted?: boolean
+          is_removed?: boolean
           parent_id?: string | null
           post_id?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
           upvotes?: number
         }
@@ -157,6 +169,78 @@ export type Database = {
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comments_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      moderation_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["moderation_action"]
+          comment_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          moderator_id: string
+          post_id: string | null
+          reason: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["moderation_action"]
+          comment_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          moderator_id: string
+          post_id?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["moderation_action"]
+          comment_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          moderator_id?: string
+          post_id?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_logs_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_logs_moderator_id_fkey"
+            columns: ["moderator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "moderation_logs_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       posts: {
@@ -171,6 +255,10 @@ export type Database = {
           id: string
           is_locked: boolean
           is_pinned: boolean
+          is_removed: boolean
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -188,6 +276,10 @@ export type Database = {
           id?: string
           is_locked?: boolean
           is_pinned?: boolean
+          is_removed?: boolean
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -205,6 +297,10 @@ export type Database = {
           id?: string
           is_locked?: boolean
           is_pinned?: boolean
+          is_removed?: boolean
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -226,6 +322,13 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       profiles: {
@@ -234,7 +337,9 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          email_verified: boolean
           id: string
+          is_banned: boolean
           membership_tier: Database["public"]["Enums"]["membership_tier"]
           post_count: number
           reply_count: number
@@ -248,7 +353,9 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_verified?: boolean
           id?: string
+          is_banned?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
           post_count?: number
           reply_count?: number
@@ -262,7 +369,9 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_verified?: boolean
           id?: string
+          is_banned?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
           post_count?: number
           reply_count?: number
@@ -272,6 +381,151 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          post_id: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string | null
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          post_id?: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          post_id?: string | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      shadow_bans: {
+        Row: {
+          banned_by: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shadow_bans_banned_by_fkey"
+            columns: ["banned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shadow_bans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_badges: {
         Row: {
@@ -401,6 +655,10 @@ export type Database = {
       can_access_premium: { Args: { _user_id: string }; Returns: boolean }
       can_moderate: { Args: { _user_id: string }; Returns: boolean }
       can_post: { Args: { _user_id: string }; Returns: boolean }
+      check_rate_limit: {
+        Args: { _activity_type: string; _user_id: string }
+        Returns: boolean
+      }
       get_membership_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["membership_tier"]
@@ -413,10 +671,30 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_shadow_banned: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
       membership_tier: "free" | "pro" | "elite"
+      moderation_action:
+        | "warning"
+        | "edit"
+        | "remove"
+        | "lock"
+        | "unlock"
+        | "shadow_ban"
+        | "unshadow_ban"
+        | "ban"
+        | "unban"
+      report_reason:
+        | "spam"
+        | "harassment"
+        | "misinformation"
+        | "unsafe_advice"
+        | "inappropriate"
+        | "off_topic"
+        | "other"
+      report_status: "pending" | "reviewed" | "resolved" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -546,6 +824,27 @@ export const Constants = {
     Enums: {
       app_role: ["user", "moderator", "admin"],
       membership_tier: ["free", "pro", "elite"],
+      moderation_action: [
+        "warning",
+        "edit",
+        "remove",
+        "lock",
+        "unlock",
+        "shadow_ban",
+        "unshadow_ban",
+        "ban",
+        "unban",
+      ],
+      report_reason: [
+        "spam",
+        "harassment",
+        "misinformation",
+        "unsafe_advice",
+        "inappropriate",
+        "off_topic",
+        "other",
+      ],
+      report_status: ["pending", "reviewed", "resolved", "dismissed"],
     },
   },
 } as const

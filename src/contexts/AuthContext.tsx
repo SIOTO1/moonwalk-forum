@@ -16,6 +16,8 @@ export interface Profile {
   reputation: number;
   post_count: number;
   reply_count: number;
+  email_verified: boolean;
+  is_banned: boolean;
   created_at: string;
   updated_at: string;
 }

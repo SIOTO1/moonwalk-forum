@@ -4,6 +4,7 @@ import { CategorySidebar } from '@/components/forum/CategorySidebar';
 import { PostList } from '@/components/forum/PostList';
 import { PostDetail } from '@/components/forum/PostDetail';
 import { TrendingTopics } from '@/components/forum/TrendingTopics';
+import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { useCategories } from '@/hooks/useCategories';
 import { usePosts, PostWithAuthor } from '@/hooks/usePosts';
 
@@ -31,6 +32,7 @@ const Index = () => {
       />
 
       <main className="container mx-auto px-4 py-6">
+        <EmailVerificationBanner />
         <div className="flex gap-6">
           {/* Left Sidebar - Categories */}
           {!selectedPost && (
