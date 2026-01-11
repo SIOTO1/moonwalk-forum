@@ -259,6 +259,7 @@ export type Database = {
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
+          slug: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -280,6 +281,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          slug?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -301,6 +303,7 @@ export type Database = {
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          slug?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, Menu, X, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
@@ -9,16 +9,21 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { CreateThreadDialog } from './CreateThreadDialog';
 
 interface HeaderProps {
-  onSearchChange: (query: string) => void;
-  searchQuery: string;
+  onSearchChange?: (query: string) => void;
+  searchQuery?: string;
   selectedCategory?: string | null;
 }
 
-export function Header({ onSearchChange, searchQuery, selectedCategory }: HeaderProps) {
+export function Header({ onSearchChange, searchQuery = '', selectedCategory }: HeaderProps) {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const { user, loading, canPost, canModerate } = useAuth();
+
+  const handleSearchFocus = () => {
+    navigate('/search');
+  };
 
   const openSignIn = () => {
     setAuthModalMode('signin');
@@ -46,8 +51,10 @@ export function Header({ onSearchChange, searchQuery, selectedCategory }: Header
                   type="text"
                   placeholder="Search discussions..."
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="search-input pl-11"
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                  onFocus={handleSearchFocus}
+                  className="search-input pl-11 cursor-pointer"
+                  readOnly
                 />
               </div>
             </div>
@@ -55,7 +62,7 @@ export function Header({ onSearchChange, searchQuery, selectedCategory }: Header
             {/* Actions */}
             <div className="flex items-center gap-2">
               {/* Mobile Search Toggle */}
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={handleSearchFocus}>
                 <Search className="w-5 h-5" />
               </Button>
 
@@ -119,8 +126,9 @@ export function Header({ onSearchChange, searchQuery, selectedCategory }: Header
                 type="text"
                 placeholder="Search discussions..."
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="search-input pl-11"
+                onFocus={handleSearchFocus}
+                className="search-input pl-11 cursor-pointer"
+                readOnly
               />
             </div>
           </div>

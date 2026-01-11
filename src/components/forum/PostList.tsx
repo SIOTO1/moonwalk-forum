@@ -9,7 +9,7 @@ type SortOption = 'popular' | 'newest' | 'unanswered';
 
 interface PostListProps {
   posts: PostWithAuthor[];
-  onSelectPost: (post: PostWithAuthor) => void;
+  onSelectPost?: (post: PostWithAuthor) => void;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   isLoading?: boolean;
