@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ContentViolationWarning } from '@/components/moderation/ContentViolationWarning';
+import { ThreadImageUpload } from './ThreadImageUpload';
 import { Plus, X, Lock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
   const [categoryId, setCategoryId] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
   
   // Content moderation states
   const [showViolationWarning, setShowViolationWarning] = useState(false);
@@ -130,6 +132,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
         content: content.trim(),
         category_id: categoryId,
         tags,
+        images,
       });
       
       toast.success('Thread created successfully!');
@@ -138,6 +141,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
       setContent('');
       setCategoryId('');
       setTags([]);
+      setImages([]);
       setContentWarning(null);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create thread');
@@ -223,6 +227,19 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-amber-700 dark:text-amber-400">{contentWarning}</p>
+            </div>
+          )}
+
+          {/* Images */}
+          {user && (
+            <div className="space-y-2">
+              <Label>Images (optional)</Label>
+              <ThreadImageUpload
+                images={images}
+                onImagesChange={setImages}
+                userId={user.id}
+                maxImages={4}
+              />
             </div>
           )}
 
