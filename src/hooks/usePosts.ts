@@ -26,6 +26,7 @@ export interface PostWithAuthor {
   comment_count: number;
   has_accepted_answer: boolean;
   tags: string[];
+  images: string[];
   created_at: string;
   updated_at: string;
   author: {
@@ -79,6 +80,7 @@ export function usePosts(options: UsePostsOptions = {}) {
           comment_count,
           has_accepted_answer,
           tags,
+          images,
           created_at,
           updated_at,
           author:profiles!posts_author_id_fkey(
@@ -166,6 +168,7 @@ export function usePost(postId: string | null) {
           comment_count,
           has_accepted_answer,
           tags,
+          images,
           created_at,
           updated_at,
           author:profiles!posts_author_id_fkey(
@@ -206,6 +209,7 @@ export function useCreatePost() {
       content: string;
       category_id: string;
       tags?: string[];
+      images?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in to create a post');
 

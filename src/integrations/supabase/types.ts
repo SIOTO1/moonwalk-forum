@@ -400,6 +400,7 @@ export type Database = {
           downvotes: number
           has_accepted_answer: boolean
           id: string
+          images: string[] | null
           is_locked: boolean
           is_pinned: boolean
           is_removed: boolean
@@ -423,6 +424,7 @@ export type Database = {
           downvotes?: number
           has_accepted_answer?: boolean
           id?: string
+          images?: string[] | null
           is_locked?: boolean
           is_pinned?: boolean
           is_removed?: boolean
@@ -446,6 +448,7 @@ export type Database = {
           downvotes?: number
           has_accepted_answer?: boolean
           id?: string
+          images?: string[] | null
           is_locked?: boolean
           is_pinned?: boolean
           is_removed?: boolean

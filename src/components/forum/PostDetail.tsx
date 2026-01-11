@@ -4,6 +4,7 @@ import { useComments, useVote, useModeratePost } from '@/hooks/useComments';
 import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { CommentThread } from './CommentThread';
+import { ThreadImageGallery } from './ThreadImageGallery';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
@@ -272,6 +273,11 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
                 </p>
               ))}
             </div>
+
+            {/* Images */}
+            {post.images && post.images.length > 0 && (
+              <ThreadImageGallery images={post.images} />
+            )}
 
             {/* Tags */}
             {post.tags && post.tags.length > 0 && (
