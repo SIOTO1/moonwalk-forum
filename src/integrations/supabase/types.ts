@@ -509,6 +509,7 @@ export type Database = {
           is_banned: boolean
           is_restricted: boolean
           membership_tier: Database["public"]["Enums"]["membership_tier"]
+          onboarding_completed: boolean
           post_count: number
           reply_count: number
           reputation: number
@@ -528,6 +529,7 @@ export type Database = {
           is_banned?: boolean
           is_restricted?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
+          onboarding_completed?: boolean
           post_count?: number
           reply_count?: number
           reputation?: number
@@ -547,6 +549,7 @@ export type Database = {
           is_banned?: boolean
           is_restricted?: boolean
           membership_tier?: Database["public"]["Enums"]["membership_tier"]
+          onboarding_completed?: boolean
           post_count?: number
           reply_count?: number
           reputation?: number

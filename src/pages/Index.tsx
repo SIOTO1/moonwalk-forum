@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/forum/Header';
 import { CategorySidebar } from '@/components/forum/CategorySidebar';
 import { PostList } from '@/components/forum/PostList';
@@ -7,6 +7,7 @@ import { HeroSection } from '@/components/forum/HeroSection';
 import { MembershipCTA } from '@/components/forum/MembershipCTA';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { useCategories } from '@/hooks/useCategories';
 import { usePosts } from '@/hooks/usePosts';
@@ -19,14 +20,22 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
 
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: posts = [], isLoading: postsLoading } = usePosts({
     categorySlug: selectedCategory,
     sortBy,
     searchQuery,
   });
+
+  // Show welcome modal for new users who haven't completed onboarding
+  useEffect(() => {
+    if (!loading && user && profile && !profile.onboarding_completed) {
+      setWelcomeModalOpen(true);
+    }
+  }, [loading, user, profile]);
 
   const showMembershipSection = user && profile?.membership_tier === 'free';
   
@@ -94,6 +103,11 @@ const Index = () => {
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
           defaultMode="signup"
+        />
+
+        <WelcomeModal 
+          isOpen={welcomeModalOpen}
+          onClose={() => setWelcomeModalOpen(false)}
         />
       </div>
     </>

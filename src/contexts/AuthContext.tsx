@@ -18,6 +18,7 @@ export interface Profile {
   reply_count: number;
   email_verified: boolean;
   is_banned: boolean;
+  onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
 }
