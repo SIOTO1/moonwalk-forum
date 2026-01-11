@@ -122,15 +122,16 @@
 
 @layer components {
   .forum-card {
-    @apply bg-card border border-border rounded-lg transition-all duration-200;
+    @apply bg-card border border-border rounded-lg transition-all duration-300 ease-out;
   }
 
   .forum-card:hover {
-    @apply border-accent/30 shadow-lg shadow-accent/5;
+    @apply border-primary/20 shadow-md -translate-y-0.5;
+    box-shadow: 0 8px 25px -8px hsl(var(--primary) / 0.08);
   }
 
   .vote-button {
-    @apply p-2 rounded-md transition-all duration-150 hover:bg-muted;
+    @apply p-2 rounded-md transition-all duration-200 hover:bg-muted hover:scale-110 active:scale-95;
   }
 
   .vote-button.upvoted {
@@ -142,7 +143,7 @@
   }
 
   .category-badge {
-    @apply px-3 py-1 rounded-full text-xs font-medium;
+    @apply px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105;
   }
 
   .authority-badge {
@@ -166,11 +167,11 @@
   }
 
   .nav-link {
-    @apply text-muted-foreground hover:text-foreground transition-colors duration-150;
+    @apply text-muted-foreground hover:text-foreground transition-all duration-200;
   }
 
   .nav-link-active {
-    @apply text-accent font-medium;
+    @apply text-primary font-medium;
   }
 
   .accepted-answer {
