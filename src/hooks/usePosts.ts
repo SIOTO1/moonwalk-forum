@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+export interface AuthorBadge {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  color: string;
+  bg_color: string;
+}
+
 export interface PostWithAuthor {
   id: string;
   title: string;
@@ -20,6 +29,7 @@ export interface PostWithAuthor {
   updated_at: string;
   author: {
     id: string;
+    user_id: string;
     username: string;
     display_name: string | null;
     avatar_url: string | null;
@@ -57,6 +67,7 @@ export function usePosts(options: UsePostsOptions = {}) {
           *,
           author:profiles!posts_author_id_fkey(
             id,
+            user_id,
             username,
             display_name,
             avatar_url,
@@ -128,6 +139,7 @@ export function usePost(postId: string | null) {
           *,
           author:profiles!posts_author_id_fkey(
             id,
+            user_id,
             username,
             display_name,
             avatar_url,

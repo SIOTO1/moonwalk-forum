@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { CommentWithAuthor, useCreateComment, useVote, useAcceptAnswer } from '@/hooks/useComments';
+import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
+import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -137,6 +139,10 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
   const [replyContent, setReplyContent] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   
+  // Fetch author badges
+  const { data: authorBadges = [] } = useUserBadges(comment.author?.user_id || null);
+  const badges: Badge[] = authorBadges.map(ub => ub.badge);
+  
   const createComment = useCreateComment();
   const vote = useVote();
   const acceptAnswer = useAcceptAnswer();
@@ -245,7 +251,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
           {/* Content */}
           <div className="flex-1 min-w-0">
             {/* Author */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Avatar className="w-6 h-6">
                 <AvatarImage src={comment.author?.avatar_url || undefined} />
                 <AvatarFallback>
@@ -257,6 +263,9 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
               </span>
               {comment.author?.membership_tier && comment.author.membership_tier !== 'free' && (
                 <MembershipBadge tier={comment.author.membership_tier} size="sm" />
+              )}
+              {badges.length > 0 && (
+                <UserBadgesList badges={badges} size="sm" maxDisplay={2} />
               )}
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="w-3 h-3" />

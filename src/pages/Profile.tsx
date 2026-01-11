@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { RoleBadge } from '@/components/auth/RoleBadge';
+import { UserBadgeDisplay } from '@/components/badges/UserBadgeDisplay';
+import { BadgeManager } from '@/components/badges/BadgeManager';
+import { useUserBadges } from '@/hooks/useBadges';
 import { useAuth, Profile as ProfileType, AppRole } from '@/contexts/AuthContext';
 import { ArrowLeft, Calendar, MessageSquare, FileText, Award, Edit } from 'lucide-react';
 import { format } from 'date-fns';
@@ -15,13 +18,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { profile: currentUserProfile } = useAuth();
+  const { profile: currentUserProfile, canModerate } = useAuth();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const isOwnProfile = currentUserProfile?.username === username;
+  
+  // Fetch user badges
+  const { data: userBadges = [] } = useUserBadges(profile?.user_id || null);
+  const badges = userBadges.map(ub => ub.badge);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -44,15 +51,13 @@ export default function Profile() {
 
       setProfile(profileData as ProfileType);
 
-      // Fetch roles if viewing own profile or as admin
-      if (currentUserProfile?.user_id === profileData.user_id) {
-        const { data: rolesData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', profileData.user_id);
-        
-        setRoles((rolesData || []).map(r => r.role as AppRole));
-      }
+      // Fetch roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', profileData.user_id);
+      
+      setRoles((rolesData || []).map(r => r.role as AppRole));
 
       setLoading(false);
     };
@@ -131,7 +136,7 @@ export default function Profile() {
                   <h1 className="text-2xl font-display font-bold">
                     {profile.display_name || profile.username}
                   </h1>
-                  <div className="flex items-center justify-center md:justify-start gap-2">
+                  <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
                     <MembershipBadge tier={profile.membership_tier} />
                     {roles.filter(r => r !== 'user').map(role => (
                       <RoleBadge key={role} role={role} />
@@ -139,7 +144,16 @@ export default function Profile() {
                   </div>
                 </div>
                 
-                <p className="text-muted-foreground mb-4">@{profile.username}</p>
+                <p className="text-muted-foreground mb-3">@{profile.username}</p>
+                
+                {/* User Badges */}
+                {badges.length > 0 && (
+                  <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap mb-4">
+                    {badges.map(badge => (
+                      <UserBadgeDisplay key={badge.id} badge={badge} size="md" showLabel />
+                    ))}
+                  </div>
+                )}
                 
                 {profile.bio && (
                   <p className="text-foreground/80 mb-4 max-w-xl">{profile.bio}</p>
@@ -152,16 +166,24 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {isOwnProfile && (
-                  <Button 
-                    className="mt-4"
-                    variant="outline"
-                    onClick={() => navigate('/settings')}
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                )}
+                <div className="flex items-center justify-center md:justify-start gap-2 mt-4">
+                  {isOwnProfile && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
+                  
+                  {canModerate && !isOwnProfile && (
+                    <BadgeManager 
+                      userId={profile.user_id} 
+                      username={profile.display_name || profile.username} 
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -201,8 +223,11 @@ export default function Profile() {
           
           <Card className="forum-card">
             <CardContent className="py-4 text-center">
-              <div className="text-2xl font-bold capitalize">{profile.membership_tier}</div>
-              <div className="text-sm text-muted-foreground">Membership</div>
+              <div className="text-2xl font-bold">{badges.length}</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                <Award className="w-4 h-4" />
+                Badges
+              </div>
             </CardContent>
           </Card>
         </div>
