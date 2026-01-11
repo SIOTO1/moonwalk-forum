@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { PasswordStrength, validatePassword } from './PasswordStrength';
 import { Loader2, Mail, Lock, User, Chrome } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +24,16 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password strength for signup
+    if (mode === 'signup') {
+      const validation = validatePassword(password);
+      if (!validation.valid) {
+        toast.error('Please create a stronger password');
+        return;
+      }
+    }
+    
     setLoading(true);
 
     try {
@@ -145,9 +156,12 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
+              {mode === 'signup' && (
+                <PasswordStrength password={password} />
+              )}
             </div>
 
             <Button
