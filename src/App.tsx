@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Moderation from "./pages/Moderation";
 import Search from "./pages/Search";
 import Thread from "./pages/Thread";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/thread/:slug" element={<Thread />} />
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/moderation" element={<Moderation />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
