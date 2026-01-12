@@ -393,6 +393,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_comment_replies: boolean
+          email_mentions: boolean
+          email_thread_replies: boolean
+          email_weekly_digest: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_comment_replies?: boolean
+          email_mentions?: boolean
+          email_thread_replies?: boolean
+          email_weekly_digest?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_comment_replies?: boolean
+          email_mentions?: boolean
+          email_thread_replies?: boolean
+          email_weekly_digest?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string
