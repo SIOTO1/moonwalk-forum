@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CommentWithAuthor, useCreateComment, useVote, useAcceptAnswer } from '@/hooks/useComments';
 import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,21 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+
+// Render content with highlighted @mentions
+function renderContentWithMentions(content: string) {
+  const parts = content.split(/(@[a-zA-Z0-9_-]+)/g);
+  return parts.map((part, index) => {
+    if (part.match(/^@[a-zA-Z0-9_-]+$/)) {
+      return (
+        <span key={index} className="text-accent font-medium">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
 
 interface CommentThreadProps {
   comments: CommentWithAuthor[];
@@ -293,7 +308,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
             {!isCollapsed && (
               <>
                 <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap mb-3">
-                  {comment.content}
+                  {renderContentWithMentions(comment.content)}
                 </p>
 
                 {/* Comment Images */}
