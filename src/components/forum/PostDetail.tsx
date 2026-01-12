@@ -5,6 +5,7 @@ import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { CommentThread } from './CommentThread';
 import { ThreadImageGallery } from './ThreadImageGallery';
+import { SocialShareButtons } from './SocialShareButtons';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
@@ -352,10 +353,11 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="sm">
-                  <Share2 className="w-4 h-4 mr-1" />
-                  Share
-                </Button>
+                <SocialShareButtons 
+                  url={window.location.href}
+                  title={post.title}
+                  description={post.content.substring(0, 150)}
+                />
                 <Button variant="ghost" size="sm">
                   <Bookmark className="w-4 h-4 mr-1" />
                   Save
