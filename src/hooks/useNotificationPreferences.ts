@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+export type NotificationFrequency = "live" | "daily" | "weekly";
+
 export interface NotificationPreferences {
   id: string;
   user_id: string;
@@ -10,6 +12,7 @@ export interface NotificationPreferences {
   email_comment_replies: boolean;
   email_mentions: boolean;
   email_weekly_digest: boolean;
+  notification_frequency: NotificationFrequency;
   created_at: string;
   updated_at: string;
 }
@@ -27,21 +30,20 @@ export function useNotificationPreferences() {
         .from("notification_preferences")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        // If no preferences exist, create default ones
-        if (error.code === "PGRST116") {
-          const { data: newPrefs, error: insertError } = await supabase
-            .from("notification_preferences")
-            .insert({ user_id: user.id })
-            .select()
-            .single();
+      if (error) throw error;
 
-          if (insertError) throw insertError;
-          return newPrefs as NotificationPreferences;
-        }
-        throw error;
+      // If no preferences exist, create default ones
+      if (!data) {
+        const { data: newPrefs, error: insertError } = await supabase
+          .from("notification_preferences")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        return newPrefs as NotificationPreferences;
       }
 
       return data as NotificationPreferences;

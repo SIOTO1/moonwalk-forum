@@ -401,6 +401,7 @@ export type Database = {
           email_thread_replies: boolean
           email_weekly_digest: boolean
           id: string
+          notification_frequency: string
           updated_at: string
           user_id: string
         }
@@ -411,6 +412,7 @@ export type Database = {
           email_thread_replies?: boolean
           email_weekly_digest?: boolean
           id?: string
+          notification_frequency?: string
           updated_at?: string
           user_id: string
         }
@@ -421,10 +423,65 @@ export type Database = {
           email_thread_replies?: boolean
           email_weekly_digest?: boolean
           id?: string
+          notification_frequency?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      pending_notifications: {
+        Row: {
+          author_id: string
+          comment_id: string | null
+          content_preview: string
+          created_at: string
+          id: string
+          is_sent: boolean
+          notification_type: string
+          recipient_user_id: string
+          sent_at: string | null
+          thread_id: string
+        }
+        Insert: {
+          author_id: string
+          comment_id?: string | null
+          content_preview: string
+          created_at?: string
+          id?: string
+          is_sent?: boolean
+          notification_type: string
+          recipient_user_id: string
+          sent_at?: string | null
+          thread_id: string
+        }
+        Update: {
+          author_id?: string
+          comment_id?: string | null
+          content_preview?: string
+          created_at?: string
+          id?: string
+          is_sent?: boolean
+          notification_type?: string
+          recipient_user_id?: string
+          sent_at?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_notifications_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts: {
         Row: {

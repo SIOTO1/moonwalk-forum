@@ -119,7 +119,7 @@ function buildCommentTree(comments: CommentWithAuthor[]): CommentWithAuthor[] {
 
 export function useCreateComment() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -137,14 +137,25 @@ export function useCreateComment() {
 
       // Calculate depth
       let depth = 0;
+      let parentComment: { author_id: string; depth: number } | null = null;
       if (parentId) {
         const { data: parent } = await supabase
           .from('comments')
-          .select('depth')
+          .select('depth, author_id')
           .eq('id', parentId)
           .single();
-        if (parent) depth = parent.depth + 1;
+        if (parent) {
+          depth = parent.depth + 1;
+          parentComment = parent;
+        }
       }
+
+      // Get post details for notification
+      const { data: post } = await supabase
+        .from('posts')
+        .select('author_id, title, slug')
+        .eq('id', postId)
+        .single();
 
       const { data, error } = await supabase
         .from('comments')
@@ -160,6 +171,49 @@ export function useCreateComment() {
         .single();
 
       if (error) throw error;
+
+      // Send notifications
+      const authorName = profile?.display_name || profile?.username || 'Someone';
+      const contentPreview = content.substring(0, 200);
+
+      try {
+        // If replying to a comment, notify the comment author
+        if (parentComment && parentComment.author_id !== user.id) {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'comment_reply',
+              recipientUserId: parentComment.author_id,
+              threadId: postId,
+              threadTitle: post?.title || 'A discussion',
+              threadSlug: post?.slug || postId,
+              authorId: user.id,
+              authorName,
+              contentPreview,
+              commentId: data.id,
+            },
+          });
+        }
+        // If it's a top-level comment, notify the post author
+        else if (!parentId && post && post.author_id !== user.id) {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'thread_reply',
+              recipientUserId: post.author_id,
+              threadId: postId,
+              threadTitle: post.title,
+              threadSlug: post.slug || postId,
+              authorId: user.id,
+              authorName,
+              contentPreview,
+              commentId: data.id,
+            },
+          });
+        }
+      } catch (notifError) {
+        // Don't fail the comment creation if notification fails
+        console.error('Failed to send notification:', notifError);
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {

@@ -12,10 +12,13 @@ const corsHeaders = {
 interface NotificationRequest {
   type: "thread_reply" | "comment_reply" | "mention";
   recipientUserId: string;
+  threadId: string;
   threadTitle: string;
   threadSlug: string;
+  authorId: string;
   authorName: string;
   contentPreview: string;
+  commentId?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -28,28 +31,71 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, recipientUserId, threadTitle, threadSlug, authorName, contentPreview }: NotificationRequest = await req.json();
+    const { 
+      type, 
+      recipientUserId, 
+      threadId,
+      threadTitle, 
+      threadSlug, 
+      authorId,
+      authorName, 
+      contentPreview,
+      commentId 
+    }: NotificationRequest = await req.json();
+
+    // Don't notify if author is replying to themselves
+    if (recipientUserId === authorId) {
+      return new Response(
+        JSON.stringify({ message: "Self-notification skipped" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Get recipient's notification preferences
     const { data: preferences } = await supabase
       .from("notification_preferences")
       .select("*")
       .eq("user_id", recipientUserId)
-      .single();
+      .maybeSingle();
 
     // Check if user wants this type of notification
-    let shouldSend = false;
+    let shouldNotify = false;
     if (type === "thread_reply" && preferences?.email_thread_replies) {
-      shouldSend = true;
+      shouldNotify = true;
     } else if (type === "comment_reply" && preferences?.email_comment_replies) {
-      shouldSend = true;
+      shouldNotify = true;
     } else if (type === "mention" && preferences?.email_mentions) {
-      shouldSend = true;
+      shouldNotify = true;
     }
 
-    if (!shouldSend) {
+    if (!shouldNotify) {
       return new Response(
         JSON.stringify({ message: "User has disabled this notification type" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const frequency = preferences?.notification_frequency || 'live';
+
+    // If not live, queue the notification for batch sending
+    if (frequency !== 'live') {
+      const { error: insertError } = await supabase
+        .from("pending_notifications")
+        .insert({
+          recipient_user_id: recipientUserId,
+          notification_type: type,
+          thread_id: threadId,
+          comment_id: commentId || null,
+          author_id: authorId,
+          content_preview: contentPreview,
+        });
+
+      if (insertError) {
+        console.error("Error queuing notification:", insertError);
+      }
+
+      return new Response(
+        JSON.stringify({ message: `Notification queued for ${frequency} digest` }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
