@@ -10,6 +10,7 @@ import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBann
 import { AuthModal } from '@/components/auth/AuthModal';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { CookieConsent } from '@/components/cookies/CookieConsent';
 import { useCategories } from '@/hooks/useCategories';
 import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -112,6 +113,8 @@ const Index = () => {
           isOpen={welcomeModalOpen}
           onClose={() => setWelcomeModalOpen(false)}
         />
+
+        <CookieConsent />
       </div>
     </>
   );
