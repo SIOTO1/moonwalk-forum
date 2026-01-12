@@ -16,7 +16,7 @@ export function SEOHead({
   description = 'Join the premier community for astronauts and space enthusiasts. Discuss equipment, share experiences, and connect with experts.',
   canonical,
   noindex = false,
-  ogImage = 'https://lovable.dev/opengraph-image-p98pqg.png',
+  ogImage = '/og-image.png',
   ogType = 'website',
   articlePublishedTime,
   articleAuthor,
