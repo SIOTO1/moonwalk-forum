@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { extractMentions } from '@/lib/mentionUtils';
 
 export interface CommentWithAuthor {
   id: string;
@@ -177,8 +178,48 @@ export function useCreateComment() {
       const contentPreview = content.substring(0, 200);
 
       try {
-        // If replying to a comment, notify the comment author
-        if (parentComment && parentComment.author_id !== user.id) {
+        // Extract @mentions and notify mentioned users
+        const mentionedUsernames = extractMentions(content);
+        if (mentionedUsernames.length > 0) {
+          // Look up user IDs for mentioned usernames
+          const { data: mentionedUsers } = await supabase
+            .from('profiles')
+            .select('user_id, username')
+            .in('username', mentionedUsernames);
+
+          if (mentionedUsers && mentionedUsers.length > 0) {
+            // Send mention notifications (excluding self-mentions)
+            for (const mentionedUser of mentionedUsers) {
+              if (mentionedUser.user_id !== user.id) {
+                await supabase.functions.invoke('send-notification-email', {
+                  body: {
+                    type: 'mention',
+                    recipientUserId: mentionedUser.user_id,
+                    threadId: postId,
+                    threadTitle: post?.title || 'A discussion',
+                    threadSlug: post?.slug || postId,
+                    authorId: user.id,
+                    authorName,
+                    contentPreview,
+                    commentId: data.id,
+                  },
+                });
+              }
+            }
+          }
+        }
+
+        // If replying to a comment, notify the comment author (if not already mentioned)
+        const mentionedUserIds = new Set<string>();
+        if (mentionedUsernames.length > 0) {
+          const { data: mentionedUsers } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .in('username', mentionedUsernames);
+          mentionedUsers?.forEach(u => mentionedUserIds.add(u.user_id));
+        }
+
+        if (parentComment && parentComment.author_id !== user.id && !mentionedUserIds.has(parentComment.author_id)) {
           await supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'comment_reply',
@@ -193,8 +234,8 @@ export function useCreateComment() {
             },
           });
         }
-        // If it's a top-level comment, notify the post author
-        else if (!parentId && post && post.author_id !== user.id) {
+        // If it's a top-level comment, notify the post author (if not already mentioned)
+        else if (!parentId && post && post.author_id !== user.id && !mentionedUserIds.has(post.author_id)) {
           await supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'thread_reply',
