@@ -9,6 +9,7 @@ import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { UserBadgeDisplay } from '@/components/badges/UserBadgeDisplay';
 import { BadgeManager } from '@/components/badges/BadgeManager';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { useUserBadges } from '@/hooks/useBadges';
 import { useAuth, Profile as ProfileType, AppRole } from '@/contexts/AuthContext';
 import { ArrowLeft, Calendar, MessageSquare, FileText, Award, Edit } from 'lucide-react';
@@ -231,6 +232,13 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Notification Settings - only show on own profile */}
+        {isOwnProfile && (
+          <div className="mb-6">
+            <NotificationSettings />
+          </div>
+        )}
 
         {/* Activity Section - Placeholder */}
         <Card className="forum-card">
