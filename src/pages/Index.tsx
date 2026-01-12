@@ -5,6 +5,7 @@ import { PostList } from '@/components/forum/PostList';
 import { TrendingTopics } from '@/components/forum/TrendingTopics';
 import { HeroSection } from '@/components/forum/HeroSection';
 import { MembershipCTA } from '@/components/forum/MembershipCTA';
+import { Footer } from '@/components/forum/Footer';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
@@ -59,14 +60,14 @@ const Index = () => {
         canonical={selectedCategory ? `${window.location.origin}/?category=${selectedCategory}` : window.location.origin}
       />
       
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header 
           searchQuery={searchQuery} 
           onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
         />
 
-        <main className="container mx-auto px-4 py-6">
+        <main className="container mx-auto px-4 py-6 flex-1">
           <EmailVerificationBanner />
           
           {/* Hero Section for non-logged-in users */}
@@ -98,6 +99,8 @@ const Index = () => {
             <MembershipCTA variant="full" />
           )}
         </main>
+
+        <Footer />
 
         <AuthModal 
           isOpen={authModalOpen}
