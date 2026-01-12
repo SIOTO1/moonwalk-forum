@@ -1,9 +1,10 @@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
-import { Bell, Mail, MessageSquare, AtSign, Newspaper } from "lucide-react";
+import { useNotificationPreferences, NotificationFrequency } from "@/hooks/useNotificationPreferences";
+import { Bell, Mail, MessageSquare, AtSign, Newspaper, Clock } from "lucide-react";
 
 export function NotificationSettings() {
   const { preferences, isLoading, updatePreferences, isUpdating } = useNotificationPreferences();
@@ -55,57 +56,122 @@ export function NotificationSettings() {
     },
     {
       key: "email_weekly_digest" as const,
-      label: "Weekly Digest",
-      description: "Receive a weekly summary of forum activity",
+      label: "Activity Digest",
+      description: "Receive a summary of forum activity",
       icon: Newspaper,
       value: preferences.email_weekly_digest,
     },
   ];
 
+  const frequencyOptions: { value: NotificationFrequency; label: string; description: string }[] = [
+    {
+      value: "live",
+      label: "Live",
+      description: "Get notified immediately as it happens",
+    },
+    {
+      value: "daily",
+      label: "Daily",
+      description: "Receive a daily digest of all notifications",
+    },
+    {
+      value: "weekly",
+      label: "Weekly",
+      description: "Receive a weekly summary on Mondays",
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Email Notifications
-        </CardTitle>
-        <CardDescription>
-          Choose which email notifications you'd like to receive
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {notifications.map((notification) => (
-          <div
-            key={notification.key}
-            className="flex items-center justify-between space-x-4"
+    <div className="space-y-6">
+      {/* Frequency Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Notification Frequency
+          </CardTitle>
+          <CardDescription>
+            Choose how often you'd like to receive email notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={preferences.notification_frequency}
+            onValueChange={(value) => 
+              updatePreferences({ notification_frequency: value as NotificationFrequency })
+            }
+            disabled={isUpdating}
+            className="space-y-4"
           >
-            <div className="flex items-start space-x-4">
-              <div className="p-2 rounded-lg bg-muted">
-                <notification.icon className="h-5 w-5 text-muted-foreground" />
+            {frequencyOptions.map((option) => (
+              <div
+                key={option.value}
+                className="flex items-start space-x-4 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => !isUpdating && updatePreferences({ notification_frequency: option.value })}
+              >
+                <RadioGroupItem value={option.value} id={option.value} className="mt-1" />
+                <div className="flex-1">
+                  <Label
+                    htmlFor={option.value}
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    {option.label}
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {option.description}
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label
-                  htmlFor={notification.key}
-                  className="text-sm font-medium leading-none cursor-pointer"
-                >
-                  {notification.label}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {notification.description}
-                </p>
+            ))}
+          </RadioGroup>
+        </CardContent>
+      </Card>
+
+      {/* Notification Types */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Email Notifications
+          </CardTitle>
+          <CardDescription>
+            Choose which email notifications you'd like to receive
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {notifications.map((notification) => (
+            <div
+              key={notification.key}
+              className="flex items-center justify-between space-x-4"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-2 rounded-lg bg-muted">
+                  <notification.icon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <Label
+                    htmlFor={notification.key}
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    {notification.label}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {notification.description}
+                  </p>
+                </div>
               </div>
+              <Switch
+                id={notification.key}
+                checked={notification.value}
+                disabled={isUpdating}
+                onCheckedChange={(checked) =>
+                  updatePreferences({ [notification.key]: checked })
+                }
+              />
             </div>
-            <Switch
-              id={notification.key}
-              checked={notification.value}
-              disabled={isUpdating}
-              onCheckedChange={(checked) =>
-                updatePreferences({ [notification.key]: checked })
-              }
-            />
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
