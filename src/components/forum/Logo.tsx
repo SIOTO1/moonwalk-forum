@@ -7,9 +7,9 @@ interface LogoProps {
 
 export function Logo({ size = 'md', showText = true }: LogoProps) {
   const heights = {
-    sm: 'h-8',
-    md: 'h-10',
-    lg: 'h-14',
+    sm: 'h-12',
+    md: 'h-16',
+    lg: 'h-20',
   };
 
   return (
@@ -17,7 +17,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
       <img 
         src={logoImage} 
         alt="Moonwalk Forum" 
-        className={`${heights[size]} w-auto`}
+        className={`${heights[size]} w-auto mix-blend-multiply dark:mix-blend-screen dark:invert`}
       />
     </div>
   );
