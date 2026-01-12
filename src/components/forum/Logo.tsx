@@ -1,4 +1,4 @@
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -7,9 +7,9 @@ interface LogoProps {
 
 export function Logo({ size = 'md', showText = true }: LogoProps) {
   const heights = {
-    sm: 'h-12',
-    md: 'h-16',
-    lg: 'h-20',
+    sm: 'h-14',
+    md: 'h-20',
+    lg: 'h-24',
   };
 
   return (
@@ -17,7 +17,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
       <img 
         src={logoImage} 
         alt="Moonwalk Forum" 
-        className={`${heights[size]} w-auto mix-blend-multiply dark:mix-blend-screen dark:invert`}
+        className={`${heights[size]} w-auto`}
       />
     </div>
   );
