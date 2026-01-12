@@ -17,7 +17,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
       <img 
         src={logoImage} 
         alt="Moonwalk Forum" 
-        className={`${heights[size]} w-auto`}
+        className={`${heights[size]} w-auto mix-blend-multiply dark:mix-blend-screen dark:brightness-150`}
       />
     </div>
   );
