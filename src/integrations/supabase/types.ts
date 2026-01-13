@@ -1140,6 +1140,14 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["membership_tier"]
       }
+      get_trending_tags: {
+        Args: { limit_count?: number }
+        Returns: {
+          post_count: number
+          recent_activity: boolean
+          tag: string
+        }[]
+      }
       has_agreed_to_conduct: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
