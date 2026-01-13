@@ -1148,6 +1148,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      invoke_digest_emails: { Args: { frequency: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_shadow_banned: { Args: { _user_id: string }; Returns: boolean }
       override_violation: {
