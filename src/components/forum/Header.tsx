@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, Menu, X, User, Shield } from 'lucide-react';
+import { Search, Menu, X, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CreateThreadDialog } from './CreateThreadDialog';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 interface HeaderProps {
   onSearchChange?: (query: string) => void;
@@ -71,11 +72,8 @@ export function Header({ onSearchChange, searchQuery = '', selectedCategory }: H
               {loading ? (
                 <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
               ) : user ? (
-                <>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
-                  </Button>
+              <>
+                  <NotificationCenter />
 
                   {canModerate && (
                     <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
