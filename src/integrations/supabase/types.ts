@@ -429,6 +429,63 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          comment_id: string | null
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          post_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          comment_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          post_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          comment_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          post_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_notifications: {
         Row: {
           author_id: string
