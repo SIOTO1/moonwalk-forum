@@ -1,8 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { 
+  playNotificationSound, 
+  isNotificationSoundEnabled, 
+  setNotificationSoundEnabled as setSoundEnabled,
+  toggleNotificationSound as toggleSound 
+} from '@/lib/notificationSound';
 
 export interface Notification {
   id: string;
@@ -167,6 +173,11 @@ export function useRealtimeNotifications() {
             ['notifications-unread-count', user.id],
             (old = 0) => old + 1
           );
+
+          // Play notification sound if enabled
+          if (isNotificationSoundEnabled()) {
+            playNotificationSound(0.3);
+          }
 
           // Show toast notification
           const actorName = notification.actor?.display_name || notification.actor?.username || 'Someone';

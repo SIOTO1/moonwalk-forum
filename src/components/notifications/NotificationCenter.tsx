@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Trash2, MessageSquare, AtSign, Reply, X, Filter } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, MessageSquare, AtSign, Reply, X, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -25,6 +29,11 @@ import {
   type GroupedNotifications,
 } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  isNotificationSoundEnabled, 
+  setNotificationSoundEnabled,
+  playNotificationSound 
+} from '@/lib/notificationSound';
 
 function NotificationIcon({ type }: { type: Notification['type'] }) {
   switch (type) {
@@ -37,6 +46,42 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
     default:
       return <Bell className="w-4 h-4" />;
   }
+}
+
+function SoundToggle() {
+  const [soundEnabled, setSoundEnabled] = useState(isNotificationSoundEnabled);
+
+  const handleToggle = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    setNotificationSoundEnabled(newValue);
+    if (newValue) {
+      // Play a preview sound when enabling
+      playNotificationSound(0.2);
+    }
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleToggle}
+        >
+          {soundEnabled ? (
+            <Volume2 className="w-3.5 h-3.5" />
+          ) : (
+            <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        {soundEnabled ? 'Mute notification sounds' : 'Enable notification sounds'}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function NotificationItem({ 
@@ -219,6 +264,7 @@ export function NotificationCenter() {
             )}
           </div>
           <div className="flex items-center gap-1">
+            <SoundToggle />
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
