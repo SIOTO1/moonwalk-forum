@@ -10,6 +10,11 @@ const trendingTopics = [
   { tag: 'slide-anchor-debate', posts: 21, hot: true },
   { tag: 'pricing-strategies', posts: 19, hot: false },
   { tag: 'tent-permits', posts: 15, hot: false },
+  { tag: 'dock-maintenance', posts: 14, hot: true },
+  { tag: 'contract-templates', posts: 12, hot: false },
+  { tag: 'seasonal-staffing', posts: 11, hot: false },
+  { tag: 'fuel-dock-regs', posts: 9, hot: false },
+  { tag: 'customer-retention', posts: 8, hot: false },
 ];
 
 const topContributors = [
