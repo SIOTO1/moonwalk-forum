@@ -5,8 +5,8 @@ import { useCreatePost } from '@/hooks/usePosts';
 import { useContentModeration } from '@/hooks/useContentModeration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MentionAutocomplete } from './MentionAutocomplete';
 import {
   Dialog,
   DialogContent,
@@ -213,12 +213,12 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
           {/* Content */}
           <div className="space-y-2">
             <Label htmlFor="content">Body *</Label>
-            <Textarea
-              id="content"
+            <MentionAutocomplete
               value={content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="Provide details, context, or ask your question..."
+              onChange={handleContentChange}
+              placeholder="Provide details, context, or ask your question... Use @ to mention users"
               className="min-h-[150px]"
+              minHeight="150px"
             />
           </div>
 

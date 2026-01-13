@@ -6,6 +6,7 @@ import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { ThreadImageUpload } from './ThreadImageUpload';
 import { ThreadImageGallery } from './ThreadImageGallery';
+import { MentionAutocomplete } from './MentionAutocomplete';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -102,11 +103,12 @@ export function CommentThread({
       {/* New Comment Form */}
       {user ? (
         <div className="forum-card p-4">
-          <Textarea
-            placeholder="Share your thoughts or answer this question..."
+          <MentionAutocomplete
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px] bg-secondary border-0 focus-visible:ring-accent mb-3"
+            onChange={setNewComment}
+            placeholder="Share your thoughts or answer this question... Use @ to mention users"
+            className="bg-secondary border-0 focus-visible:ring-accent mb-3"
+            minHeight="100px"
           />
           <div className="mb-3">
             <ThreadImageUpload
@@ -362,11 +364,12 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
                     <div className="flex items-start gap-2">
                       <CornerDownRight className="w-4 h-4 text-muted-foreground mt-3" />
                       <div className="flex-1 space-y-2">
-                        <Textarea
-                          placeholder="Write a reply..."
+                        <MentionAutocomplete
                           value={replyContent}
-                          onChange={(e) => setReplyContent(e.target.value)}
-                          className="min-h-[80px] bg-secondary border-0"
+                          onChange={setReplyContent}
+                          placeholder="Write a reply... Use @ to mention users"
+                          className="bg-secondary border-0"
+                          minHeight="80px"
                         />
                         <ThreadImageUpload
                           images={replyImages}
