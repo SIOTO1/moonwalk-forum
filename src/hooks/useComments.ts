@@ -176,6 +176,25 @@ export function useCreateComment() {
       // Send notifications
       const authorName = profile?.display_name || profile?.username || 'Someone';
       const contentPreview = content.substring(0, 200);
+      const threadLink = `/thread/${post?.slug || postId}`;
+
+      // Helper to create in-app notification
+      const createInAppNotification = async (
+        recipientUserId: string,
+        type: 'thread_reply' | 'comment_reply' | 'mention',
+        title: string
+      ) => {
+        await supabase.from('notifications').insert({
+          user_id: recipientUserId,
+          type,
+          title,
+          content: contentPreview,
+          link: threadLink,
+          post_id: postId,
+          comment_id: data.id,
+          actor_id: user.id,
+        });
+      };
 
       try {
         // Extract @mentions and notify mentioned users
@@ -191,6 +210,14 @@ export function useCreateComment() {
             // Send mention notifications (excluding self-mentions)
             for (const mentionedUser of mentionedUsers) {
               if (mentionedUser.user_id !== user.id) {
+                // Create in-app notification
+                await createInAppNotification(
+                  mentionedUser.user_id,
+                  'mention',
+                  `${authorName} mentioned you in "${post?.title || 'a discussion'}"`
+                );
+
+                // Send email notification
                 await supabase.functions.invoke('send-notification-email', {
                   body: {
                     type: 'mention',
@@ -220,6 +247,14 @@ export function useCreateComment() {
         }
 
         if (parentComment && parentComment.author_id !== user.id && !mentionedUserIds.has(parentComment.author_id)) {
+          // Create in-app notification
+          await createInAppNotification(
+            parentComment.author_id,
+            'comment_reply',
+            `${authorName} replied to your comment`
+          );
+
+          // Send email notification
           await supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'comment_reply',
@@ -236,6 +271,14 @@ export function useCreateComment() {
         }
         // If it's a top-level comment, notify the post author (if not already mentioned)
         else if (!parentId && post && post.author_id !== user.id && !mentionedUserIds.has(post.author_id)) {
+          // Create in-app notification
+          await createInAppNotification(
+            post.author_id,
+            'thread_reply',
+            `${authorName} replied to "${post.title}"`
+          );
+
+          // Send email notification
           await supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'thread_reply',
