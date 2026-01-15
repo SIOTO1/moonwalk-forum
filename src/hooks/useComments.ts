@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { extractMentions } from '@/lib/mentionUtils';
@@ -32,15 +32,24 @@ export interface CommentWithAuthor {
 
 type CommentSortOption = 'top' | 'newest';
 
+const COMMENTS_PER_PAGE = 15;
+
 export function useComments(postId: string | null, sortBy: CommentSortOption = 'top') {
   const { user } = useAuth();
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['comments', postId, sortBy, user?.id],
-    queryFn: async () => {
-      if (!postId) return [];
+    queryFn: async ({ pageParam = 0 }) => {
+      if (!postId) return { comments: [], nextPage: undefined, totalCount: 0 };
 
-      // Fetch comments
+      // Get total count of root comments first
+      const { count: totalCount } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId)
+        .is('parent_id', null);
+
+      // Fetch root-level comments with pagination
       let query = supabase
         .from('comments')
         .select(`
@@ -54,7 +63,8 @@ export function useComments(postId: string | null, sortBy: CommentSortOption = '
             membership_tier
           )
         `)
-        .eq('post_id', postId);
+        .eq('post_id', postId)
+        .is('parent_id', null);
 
       // Sort by top (upvotes - downvotes) or newest
       if (sortBy === 'top') {
@@ -64,17 +74,50 @@ export function useComments(postId: string | null, sortBy: CommentSortOption = '
         query = query.order('created_at', { ascending: false });
       }
 
-      const { data: comments, error } = await query;
-      if (error) throw error;
+      // Pagination for root comments only
+      query = query.range(pageParam * COMMENTS_PER_PAGE, (pageParam + 1) * COMMENTS_PER_PAGE - 1);
+
+      const { data: rootComments, error: rootError } = await query;
+      if (rootError) throw rootError;
+
+      // If we have root comments, fetch their replies
+      let allComments = [...(rootComments || [])];
+      
+      if (rootComments && rootComments.length > 0) {
+        const rootIds = rootComments.map(c => c.id);
+        
+        // Fetch all replies for these root comments recursively
+        const { data: replies, error: repliesError } = await supabase
+          .from('comments')
+          .select(`
+            *,
+            author:profiles!comments_author_id_fkey(
+              id,
+              user_id,
+              username,
+              display_name,
+              avatar_url,
+              membership_tier
+            )
+          `)
+          .eq('post_id', postId)
+          .not('parent_id', 'is', null);
+
+        if (repliesError) throw repliesError;
+
+        // Filter replies to only include those under the current page's root comments
+        const relevantReplies = filterRelevantReplies(replies || [], rootIds);
+        allComments = [...allComments, ...relevantReplies];
+      }
 
       // Fetch user votes if logged in
       let userVotes: Record<string, 1 | -1> = {};
-      if (user) {
+      if (user && allComments.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
           .select('comment_id, vote_type')
           .eq('user_id', user.id)
-          .in('comment_id', comments.map(c => c.id));
+          .in('comment_id', allComments.map(c => c.id));
         
         if (votes) {
           userVotes = votes.reduce((acc, v) => {
@@ -85,15 +128,55 @@ export function useComments(postId: string | null, sortBy: CommentSortOption = '
       }
 
       // Build nested structure
-      const commentsWithVotes = comments.map(c => ({
+      const commentsWithVotes = allComments.map(c => ({
         ...c,
         userVote: userVotes[c.id] || null,
       })) as CommentWithAuthor[];
 
-      return buildCommentTree(commentsWithVotes);
+      const tree = buildCommentTree(commentsWithVotes);
+      const hasMore = rootComments && rootComments.length === COMMENTS_PER_PAGE;
+
+      return {
+        comments: tree,
+        nextPage: hasMore ? pageParam + 1 : undefined,
+        totalCount: totalCount || 0,
+      };
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!postId,
   });
+}
+
+// Filter replies to only include those that are descendants of the given root comment IDs
+function filterRelevantReplies(allReplies: any[], rootIds: string[]): any[] {
+  const replyMap = new Map<string, any>();
+  allReplies.forEach(r => replyMap.set(r.id, r));
+  
+  const relevant: any[] = [];
+  const visited = new Set<string>();
+  
+  function isDescendantOfRoots(comment: any): boolean {
+    if (visited.has(comment.id)) return false;
+    visited.add(comment.id);
+    
+    if (!comment.parent_id) return false;
+    if (rootIds.includes(comment.parent_id)) return true;
+    
+    const parent = replyMap.get(comment.parent_id);
+    if (parent) return isDescendantOfRoots(parent);
+    
+    return rootIds.includes(comment.parent_id);
+  }
+  
+  allReplies.forEach(reply => {
+    visited.clear();
+    if (isDescendantOfRoots(reply)) {
+      relevant.push(reply);
+    }
+  });
+  
+  return relevant;
 }
 
 function buildCommentTree(comments: CommentWithAuthor[]): CommentWithAuthor[] {
@@ -112,7 +195,7 @@ function buildCommentTree(comments: CommentWithAuthor[]): CommentWithAuthor[] {
       const parent = commentMap.get(comment.parent_id)!;
       parent.replies = parent.replies || [];
       parent.replies.push(node);
-    } else {
+    } else if (!comment.parent_id) {
       roots.push(node);
     }
   });
