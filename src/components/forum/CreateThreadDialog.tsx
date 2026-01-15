@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreatePost } from '@/hooks/usePosts';
 import { useContentModeration } from '@/hooks/useContentModeration';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
   const { data: categories = [] } = useCategories();
   const createPost = useCreatePost();
   const { validateContent, checkOnly, isChecking } = useContentModeration();
+  const { checkRateLimit, trackActivity } = useRateLimit();
   
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -111,6 +113,13 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
       return;
     }
 
+    // Check rate limit first
+    const rateLimitResult = await checkRateLimit('post');
+    if (!rateLimitResult.allowed) {
+      toast.error(rateLimitResult.message || 'Rate limit exceeded. Please wait before posting again.');
+      return;
+    }
+
     // Validate content before submission
     const fullContent = `${title} ${content}`;
     const result = await validateContent(fullContent);
@@ -134,6 +143,9 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
         tags,
         images,
       });
+      
+      // Track successful post creation for rate limiting
+      await trackActivity('post');
       
       toast.success('Thread created successfully!');
       setOpen(false);
