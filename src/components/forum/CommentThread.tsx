@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CommentWithAuthor, useCreateComment, useVote, useAcceptAnswer } from '@/hooks/useComments';
 import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,8 @@ import {
   MessageCircle, 
   CheckCircle2, 
   CornerDownRight,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -43,6 +44,10 @@ interface CommentThreadProps {
   postAuthorId: string;
   sortBy: 'top' | 'newest';
   onSortChange: (sort: 'top' | 'newest') => void;
+  totalCount?: number;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function CommentThread({ 
@@ -51,11 +56,41 @@ export function CommentThread({
   postAuthorId,
   sortBy,
   onSortChange,
+  totalCount = 0,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
 }: CommentThreadProps) {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [commentImages, setCommentImages] = useState<string[]>([]);
   const createComment = useCreateComment();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage || !onLoadMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -74,12 +109,14 @@ export function CommentThread({
     }
   };
 
+  const displayCount = totalCount > 0 ? totalCount : comments.length;
+
   return (
     <div className="space-y-4">
       {/* Sort Options */}
       <div className="flex items-center justify-between">
         <h3 className="font-display font-semibold">
-          {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+          {displayCount} {displayCount === 1 ? 'Comment' : 'Comments'}
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Sort by:</span>
@@ -137,15 +174,27 @@ export function CommentThread({
       {/* Comments List */}
       <div className="space-y-3">
         {comments.length > 0 ? (
-          comments.map(comment => (
-            <CommentCard 
-              key={comment.id} 
-              comment={comment} 
-              postId={postId}
-              postAuthorId={postAuthorId}
-              depth={0}
-            />
-          ))
+          <>
+            {comments.map(comment => (
+              <CommentCard 
+                key={comment.id} 
+                comment={comment} 
+                postId={postId}
+                postAuthorId={postAuthorId}
+                depth={0}
+              />
+            ))}
+            
+            {/* Infinite scroll trigger */}
+            <div ref={loadMoreRef} className="h-4" />
+            
+            {/* Loading indicator */}
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </>
         ) : (
           <div className="forum-card p-8 text-center text-muted-foreground">
             No comments yet. Be the first to respond!

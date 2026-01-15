@@ -67,7 +67,17 @@ interface PostDetailProps {
 export function PostDetail({ post, onBack }: PostDetailProps) {
   const { user, canModerate } = useAuth();
   const [commentSort, setCommentSort] = useState<'top' | 'newest'>('top');
-  const { data: comments = [], isLoading: commentsLoading } = useComments(post.id, commentSort);
+  const { 
+    data: commentsData, 
+    isLoading: commentsLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useComments(post.id, commentSort);
+  
+  // Flatten paginated comments
+  const comments = commentsData?.pages.flatMap(page => page.comments) ?? [];
+  const totalCount = commentsData?.pages[0]?.totalCount ?? 0;
   const vote = useVote();
   const moderatePost = useModeratePost();
   
@@ -392,6 +402,10 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
           postAuthorId={post.author_id}
           sortBy={commentSort}
           onSortChange={setCommentSort}
+          totalCount={totalCount}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={() => fetchNextPage()}
         />
       )}
     </div>
