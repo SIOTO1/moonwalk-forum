@@ -11,6 +11,7 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { CookieConsent } from '@/components/cookies/CookieConsent';
+import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { useCategories } from '@/hooks/useCategories';
 import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -126,6 +127,7 @@ const Index = () => {
           onClose={() => setWelcomeModalOpen(false)}
         />
 
+        <ScrollToTop />
         <CookieConsent />
       </div>
     </>

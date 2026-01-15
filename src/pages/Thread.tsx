@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { supabase } from '@/integrations/supabase/client';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { Logo } from '@/components/forum/Logo';
@@ -188,6 +189,8 @@ export default function Thread() {
             onBack={() => navigate('/')} 
           />
         </main>
+
+        <ScrollToTop />
       </div>
     </>
   );
