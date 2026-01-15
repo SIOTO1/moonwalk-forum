@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -56,13 +56,15 @@ interface UsePostsOptions {
   searchQuery?: string;
 }
 
+const POSTS_PER_PAGE = 10;
+
 export function usePosts(options: UsePostsOptions = {}) {
   const { categorySlug, sortBy = 'popular', searchQuery } = options;
   const { user } = useAuth();
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['posts', categorySlug, sortBy, searchQuery, user?.id],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('posts')
         .select(`
@@ -128,20 +130,28 @@ export function usePosts(options: UsePostsOptions = {}) {
       // Always put pinned posts first
       query = query.order('is_pinned', { ascending: false });
 
+      // Pagination
+      query = query.range(pageParam * POSTS_PER_PAGE, (pageParam + 1) * POSTS_PER_PAGE - 1);
+
       const { data, error } = await query;
 
       if (error) throw error;
       
       // Filter out posts where category is null (user can't access that category)
-      const filteredData = (data as PostWithAuthor[]).filter(post => post.category !== null);
+      let filteredData = (data as PostWithAuthor[]).filter(post => post.category !== null);
       
       // If filtering by category slug, ensure the category matches
       if (categorySlug) {
-        return filteredData.filter(post => post.category?.slug === categorySlug);
+        filteredData = filteredData.filter(post => post.category?.slug === categorySlug);
       }
       
-      return filteredData;
+      return {
+        posts: filteredData,
+        nextPage: filteredData.length === POSTS_PER_PAGE ? pageParam + 1 : undefined,
+      };
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
   });
 }
 
