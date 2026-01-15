@@ -1,7 +1,7 @@
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/button';
-import { Flame, Clock, HelpCircle } from 'lucide-react';
+import { Flame, Clock, HelpCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,9 +13,21 @@ interface PostListProps {
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   isLoading?: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function PostList({ posts, onSelectPost, sortBy, onSortChange, isLoading = false }: PostListProps) {
+export function PostList({ 
+  posts, 
+  onSelectPost, 
+  sortBy, 
+  onSortChange, 
+  isLoading = false,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
+}: PostListProps) {
   const sortOptions: { value: SortOption; label: string; icon: typeof Flame }[] = [
     { value: 'popular', label: 'Popular', icon: Flame },
     { value: 'newest', label: 'Newest', icon: Clock },
@@ -86,13 +98,36 @@ export function PostList({ posts, onSelectPost, sortBy, onSortChange, isLoading 
       {/* Posts */}
       <div className="space-y-3">
         {posts.length > 0 ? (
-          posts.map(post => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              onSelect={onSelectPost}
-            />
-          ))
+          <>
+            {posts.map(post => (
+              <PostCard 
+                key={post.id} 
+                post={post} 
+                onSelect={onSelectPost}
+              />
+            ))}
+            
+            {/* Load More Button */}
+            {hasNextPage && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={onLoadMore}
+                  disabled={isFetchingNextPage}
+                  className="min-w-[140px]"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load More'
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="forum-card p-12 text-center">
             <HelpCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

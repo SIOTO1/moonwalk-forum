@@ -26,11 +26,20 @@ const Index = () => {
 
   const { user, profile, loading } = useAuth();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: posts = [], isLoading: postsLoading } = usePosts({
+  const { 
+    data: postsData, 
+    isLoading: postsLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = usePosts({
     categorySlug: selectedCategory,
     sortBy,
     searchQuery,
   });
+
+  // Flatten paginated posts
+  const posts = postsData?.pages.flatMap(page => page.posts) ?? [];
 
   // Show welcome modal for new users who haven't completed onboarding
   useEffect(() => {
@@ -89,6 +98,9 @@ const Index = () => {
               sortBy={sortBy}
               onSortChange={setSortBy}
               isLoading={postsLoading}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onLoadMore={() => fetchNextPage()}
             />
             
             {/* Right Sidebar - Trending */}
