@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { extractMentions } from '@/lib/mentionUtils';
+import { useRateLimit } from '@/hooks/useRateLimit';
+import { toast } from 'sonner';
 
 export interface CommentWithAuthor {
   id: string;
@@ -121,6 +123,7 @@ function buildCommentTree(comments: CommentWithAuthor[]): CommentWithAuthor[] {
 export function useCreateComment() {
   const queryClient = useQueryClient();
   const { user, profile } = useAuth();
+  const { checkRateLimit, trackActivity } = useRateLimit();
 
   return useMutation({
     mutationFn: async ({ 
@@ -135,6 +138,12 @@ export function useCreateComment() {
       images?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in to comment');
+
+      // Check rate limit before creating comment
+      const rateLimitResult = await checkRateLimit('comment');
+      if (!rateLimitResult.allowed) {
+        throw new Error(rateLimitResult.message || 'Rate limit exceeded. Please wait before commenting again.');
+      }
 
       // Calculate depth
       let depth = 0;
@@ -298,11 +307,17 @@ export function useCreateComment() {
         console.error('Failed to send notification:', notifError);
       }
 
+      // Track successful comment creation for rate limiting
+      await trackActivity('comment');
+
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 }
