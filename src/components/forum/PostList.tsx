@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,33 @@ export function PostList({
   isFetchingNextPage = false,
   onLoadMore,
 }: PostListProps) {
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage || !onLoadMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
+
   const sortOptions: { value: SortOption; label: string; icon: typeof Flame }[] = [
     { value: 'popular', label: 'Popular', icon: Flame },
     { value: 'newest', label: 'Newest', icon: Clock },
@@ -107,24 +135,13 @@ export function PostList({
               />
             ))}
             
-            {/* Load More Button */}
-            {hasNextPage && (
-              <div className="flex justify-center pt-4">
-                <Button
-                  variant="outline"
-                  onClick={onLoadMore}
-                  disabled={isFetchingNextPage}
-                  className="min-w-[140px]"
-                >
-                  {isFetchingNextPage ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load More'
-                  )}
-                </Button>
+            {/* Infinite scroll trigger */}
+            <div ref={loadMoreRef} className="h-4" />
+            
+            {/* Loading indicator */}
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             )}
           </>
