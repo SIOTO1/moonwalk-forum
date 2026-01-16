@@ -15,6 +15,7 @@ import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { useCategories } from '@/hooks/useCategories';
 import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 
 type SortOption = 'popular' | 'newest' | 'unanswered';
 
@@ -42,6 +43,9 @@ const Index = () => {
 
   // Flatten paginated posts
   const posts = postsData?.pages.flatMap(page => page.posts) ?? [];
+
+  // Subscribe to realtime updates for votes and comments
+  useRealtimeUpdates();
 
   // Show welcome modal for new users who haven't completed onboarding
   useEffect(() => {
