@@ -61,101 +61,139 @@ const POSTS_PER_PAGE = 10;
 export function usePosts(options: UsePostsOptions = {}) {
   const { categorySlug, sortBy = 'popular', searchQuery } = options;
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  return useInfiniteQuery({
-    queryKey: ['posts', categorySlug, sortBy, searchQuery, user?.id],
-    queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('posts')
-        .select(`
+  const queryKey = ['posts', categorySlug, sortBy, searchQuery, user?.id];
+
+  const fetchPosts = async ({ pageParam = 0 }: { pageParam?: number }) => {
+    let query = supabase
+      .from('posts')
+      .select(`
+        id,
+        title,
+        content,
+        slug,
+        author_id,
+        category_id,
+        is_pinned,
+        is_locked,
+        view_count,
+        upvotes,
+        downvotes,
+        comment_count,
+        has_accepted_answer,
+        tags,
+        images,
+        created_at,
+        updated_at,
+        author:profiles!posts_author_id_fkey(
           id,
-          title,
-          content,
+          user_id,
+          username,
+          display_name,
+          avatar_url,
+          membership_tier,
+          reputation
+        ),
+        category:categories!posts_category_id_fkey(
+          id,
+          name,
           slug,
-          author_id,
-          category_id,
-          is_pinned,
-          is_locked,
-          view_count,
-          upvotes,
-          downvotes,
-          comment_count,
-          has_accepted_answer,
-          tags,
-          images,
-          created_at,
-          updated_at,
-          author:profiles!posts_author_id_fkey(
-            id,
-            user_id,
-            username,
-            display_name,
-            avatar_url,
-            membership_tier,
-            reputation
-          ),
-          category:categories!posts_category_id_fkey(
-            id,
-            name,
-            slug,
-            icon,
-            color,
-            is_private
-          )
-        `);
+          icon,
+          color,
+          is_private
+        )
+      `);
 
-      // Filter by category if provided
-      if (categorySlug) {
-        query = query.eq('category.slug', categorySlug);
-      }
+    // Filter by category if provided
+    if (categorySlug) {
+      query = query.eq('category.slug', categorySlug);
+    }
 
-      // Search filter
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-      }
+    // Search filter
+    if (searchQuery) {
+      query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+    }
 
-      // Sorting
-      switch (sortBy) {
-        case 'popular':
-          query = query.order('upvotes', { ascending: false });
-          break;
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'unanswered':
-          query = query.eq('has_accepted_answer', false).order('created_at', { ascending: false });
-          break;
-      }
+    // Sorting
+    switch (sortBy) {
+      case 'popular':
+        query = query.order('upvotes', { ascending: false });
+        break;
+      case 'newest':
+        query = query.order('created_at', { ascending: false });
+        break;
+      case 'unanswered':
+        query = query.eq('has_accepted_answer', false).order('created_at', { ascending: false });
+        break;
+    }
 
-      // Always put pinned posts first
-      query = query.order('is_pinned', { ascending: false });
+    // Always put pinned posts first
+    query = query.order('is_pinned', { ascending: false });
 
-      // Pagination
-      query = query.range(pageParam * POSTS_PER_PAGE, (pageParam + 1) * POSTS_PER_PAGE - 1);
+    // Pagination
+    query = query.range(pageParam * POSTS_PER_PAGE, (pageParam + 1) * POSTS_PER_PAGE - 1);
 
-      const { data, error } = await query;
+    const { data, error } = await query;
 
-      if (error) throw error;
-      
-      // Filter out posts where category is null (user can't access that category)
-      let filteredData = (data as PostWithAuthor[]).filter(post => post.category !== null);
-      
-      // If filtering by category slug, ensure the category matches
-      if (categorySlug) {
-        filteredData = filteredData.filter(post => post.category?.slug === categorySlug);
-      }
-      
-      return {
-        posts: filteredData,
-        nextPage: filteredData.length === POSTS_PER_PAGE ? pageParam + 1 : undefined,
-      };
-    },
+    if (error) throw error;
+    
+    // Filter out posts where category is null (user can't access that category)
+    let filteredData = (data as PostWithAuthor[]).filter(post => post.category !== null);
+    
+    // If filtering by category slug, ensure the category matches
+    if (categorySlug) {
+      filteredData = filteredData.filter(post => post.category?.slug === categorySlug);
+    }
+    
+    return {
+      posts: filteredData,
+      nextPage: filteredData.length === POSTS_PER_PAGE ? pageParam + 1 : undefined,
+    };
+  };
+
+  const infiniteQuery = useInfiniteQuery({
+    queryKey,
+    queryFn: fetchPosts,
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     // Posts update frequently but 30 seconds is reasonable for list views
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
   });
+
+  // Prefetch the next page to eliminate loading delays
+  const prefetchNextPage = async () => {
+    const currentData = infiniteQuery.data;
+    if (!currentData || !infiniteQuery.hasNextPage || infiniteQuery.isFetchingNextPage) return;
+
+    const lastPage = currentData.pages[currentData.pages.length - 1];
+    const nextPageParam = lastPage.nextPage;
+    
+    if (nextPageParam === undefined) return;
+
+    // Check if next page is already cached
+    const cachedData = queryClient.getQueryData(queryKey);
+    if (cachedData) {
+      const cachedPages = (cachedData as typeof currentData).pages;
+      // If we already have data for the next page, skip prefetch
+      if (cachedPages.length > nextPageParam) return;
+    }
+
+    // Prefetch the next page silently
+    await queryClient.prefetchInfiniteQuery({
+      queryKey,
+      queryFn: fetchPosts,
+      initialPageParam: 0,
+      pages: nextPageParam + 1,
+      getNextPageParam: (lastPage: { posts: PostWithAuthor[]; nextPage?: number }) => lastPage.nextPage,
+    });
+  };
+
+  return {
+    ...infiniteQuery,
+    prefetchNextPage,
+  };
 }
 
 export function usePost(postId: string | null) {

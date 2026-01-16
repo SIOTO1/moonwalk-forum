@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ interface PostListProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  onPrefetchNext?: () => void;
 }
 
 export function PostList({ 
@@ -28,10 +29,44 @@ export function PostList({
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
+  onPrefetchNext,
 }: PostListProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const prefetchRef = useRef<HTMLDivElement>(null);
+  const hasPrefetched = useRef(false);
 
-  // Infinite scroll with Intersection Observer
+  // Reset prefetch flag when posts change (new query or page loaded)
+  useEffect(() => {
+    hasPrefetched.current = false;
+  }, [posts.length]);
+
+  // Prefetch next page when user scrolls near bottom (before they reach the load trigger)
+  useEffect(() => {
+    if (!hasNextPage || !onPrefetchNext || hasPrefetched.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasPrefetched.current) {
+          hasPrefetched.current = true;
+          onPrefetchNext();
+        }
+      },
+      { threshold: 0.1, rootMargin: '400px' } // Trigger earlier than load
+    );
+
+    const currentRef = prefetchRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, onPrefetchNext]);
+
+  // Infinite scroll with Intersection Observer - triggers actual load
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage || !onLoadMore) return;
 
@@ -135,7 +170,10 @@ export function PostList({
               />
             ))}
             
-            {/* Infinite scroll trigger */}
+            {/* Prefetch trigger - fires early */}
+            <div ref={prefetchRef} className="h-1" />
+            
+            {/* Infinite scroll trigger - fires when visible */}
             <div ref={loadMoreRef} className="h-4" />
             
             {/* Loading indicator */}
