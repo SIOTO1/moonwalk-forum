@@ -33,6 +33,7 @@ const Index = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
+    prefetchNextPage,
   } = usePosts({
     categorySlug: selectedCategory,
     sortBy,
@@ -102,6 +103,7 @@ const Index = () => {
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
               onLoadMore={() => fetchNextPage()}
+              onPrefetchNext={prefetchNextPage}
             />
             
             {/* Right Sidebar - Trending */}
