@@ -35,6 +35,9 @@ export function useBadges() {
       if (error) throw error;
       return data as Badge[];
     },
+    // Badges are static - cache for 30 minutes
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
   });
 }
 
@@ -57,6 +60,9 @@ export function useUserBadges(userId: string | null) {
       return data as (UserBadge & { badge: Badge })[];
     },
     enabled: !!userId,
+    // User badges change infrequently - cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
   });
 }
 

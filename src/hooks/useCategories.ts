@@ -31,6 +31,9 @@ export function useCategories() {
       if (error) throw error;
       return data as Category[];
     },
+    // Categories rarely change - cache for 10 minutes
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -50,5 +53,8 @@ export function useCategoryBySlug(slug: string | null) {
       return data as Category;
     },
     enabled: !!slug,
+    // Categories rarely change - cache for 10 minutes
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
   });
 }

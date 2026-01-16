@@ -145,6 +145,9 @@ export function useComments(postId: string | null, sortBy: CommentSortOption = '
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!postId,
+    // Comments update moderately - cache for 30 seconds
+    staleTime: 1000 * 30,
+    gcTime: 1000 * 60 * 5,
   });
 }
 
