@@ -1,11 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
+import { SponsoredPostCard, placeholderSponsoredPost } from '@/components/ads/SponsoredPostCard';
 import { Button } from '@/components/ui/button';
 import { Flame, Clock, HelpCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-
 type SortOption = 'popular' | 'newest' | 'unanswered';
 
 interface PostListProps {
@@ -162,12 +162,19 @@ export function PostList({
       <div className="space-y-3">
         {posts.length > 0 ? (
           <>
-            {posts.map(post => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onSelect={onSelectPost}
-              />
+            {posts.map((post, index) => (
+              <div key={post.id}>
+                <PostCard 
+                  post={post} 
+                  onSelect={onSelectPost}
+                />
+                {/* Insert sponsored post after 3rd post */}
+                {index === 2 && (
+                  <div className="mt-3">
+                    <SponsoredPostCard post={placeholderSponsoredPost} />
+                  </div>
+                )}
+              </div>
             ))}
             
             {/* Prefetch trigger - fires early */}
