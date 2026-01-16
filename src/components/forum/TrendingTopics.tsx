@@ -2,10 +2,10 @@ import { TrendingUp, Flame, Award, ArrowUpRight, Crown, Star, Medal } from 'luci
 import { cn } from '@/lib/utils';
 import { RecentActivityFeed } from './RecentActivityFeed';
 import { MembershipCTA } from './MembershipCTA';
+import { SidebarAdBanner } from '@/components/ads/SidebarAdBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrendingTags } from '@/hooks/useTrendingTags';
 import { Skeleton } from '@/components/ui/skeleton';
-
 const topContributors = [
   { name: 'Sarah Chen', role: 'Industry Expert', karma: '5.2K', avatar: 'SC' },
   { name: 'Alex Rivera', role: 'Moderator', karma: '8.9K', avatar: 'AR' },
@@ -129,6 +129,9 @@ export function TrendingTopics() {
             })}
           </div>
         </div>
+
+        {/* Advertisement Slot */}
+        <SidebarAdBanner />
 
         {/* Membership CTA */}
         {showMembershipCTA && <MembershipCTA variant="sidebar" />}
