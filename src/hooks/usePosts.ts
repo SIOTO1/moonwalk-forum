@@ -152,6 +152,9 @@ export function usePosts(options: UsePostsOptions = {}) {
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
+    // Posts update frequently but 30 seconds is reasonable for list views
+    staleTime: 1000 * 30,
+    gcTime: 1000 * 60 * 5,
   });
 }
 
@@ -206,6 +209,9 @@ export function usePost(postId: string | null) {
       return data as PostWithAuthor;
     },
     enabled: !!postId,
+    // Single post view - cache for 1 minute
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 5,
   });
 }
 

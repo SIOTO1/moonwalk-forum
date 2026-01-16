@@ -15,7 +15,22 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Default stale time of 1 minute - data is considered fresh and won't refetch
+      staleTime: 1000 * 60,
+      // Keep unused data in cache for 10 minutes
+      gcTime: 1000 * 60 * 10,
+      // Don't refetch on window focus by default (reduces unnecessary requests)
+      refetchOnWindowFocus: false,
+      // Don't refetch when component remounts if data is fresh
+      refetchOnMount: false,
+      // Retry failed requests up to 2 times
+      retry: 2,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
