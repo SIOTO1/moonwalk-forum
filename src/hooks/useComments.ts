@@ -435,7 +435,7 @@ export function useVote() {
           .eq(postId ? 'post_id' : 'comment_id', postId || commentId);
         
         if (error) throw error;
-        return { action: 'removed' };
+        return { action: 'removed' as const, voteType, currentVote, postId, commentId };
       }
 
       // If different vote or no vote, upsert
@@ -451,11 +451,36 @@ export function useVote() {
         });
 
       if (error) throw error;
-      return { action: currentVote ? 'changed' : 'added' };
+      const actionType = currentVote ? 'changed' : 'added';
+      return { action: actionType, voteType, currentVote, postId, commentId };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    // Use optimistic updates via onMutate for instant UI feedback
+    onMutate: async ({ postId, commentId, voteType, currentVote }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['posts'] });
+      await queryClient.cancelQueries({ queryKey: ['comments'] });
+
+      // Return context for rollback
+      return { postId, commentId, voteType, currentVote };
+    },
+    onError: (err, variables, context) => {
+      // On error, we let the component handle the revert via its local state
+      console.error('Vote failed:', err);
+    },
+    onSettled: (data, error, variables) => {
+      // Only invalidate on success to sync with server, but don't refetch immediately
+      // The local state in components handles the UI update
+      if (!error) {
+        // Use a slight delay to batch invalidations and reduce refetches
+        setTimeout(() => {
+          if (variables.postId) {
+            queryClient.invalidateQueries({ queryKey: ['post', variables.postId] });
+          }
+          if (variables.commentId) {
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+          }
+        }, 1000);
+      }
     },
   });
 }

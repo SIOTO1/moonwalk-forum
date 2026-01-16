@@ -219,6 +219,18 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
   const [replyImages, setReplyImages] = useState<string[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   
+  // Local optimistic state for votes
+  const [localUpvotes, setLocalUpvotes] = useState(comment.upvotes);
+  const [localDownvotes, setLocalDownvotes] = useState(comment.downvotes);
+  const [userVote, setUserVote] = useState<1 | -1 | null>(comment.userVote || null);
+  
+  // Sync local state when comment prop changes
+  useEffect(() => {
+    setLocalUpvotes(comment.upvotes);
+    setLocalDownvotes(comment.downvotes);
+    setUserVote(comment.userVote || null);
+  }, [comment.upvotes, comment.downvotes, comment.userVote]);
+  
   // Fetch author badges
   const { data: authorBadges = [] } = useUserBadges(comment.author?.user_id || null);
   const badges: Badge[] = authorBadges.map(ub => ub.badge);
@@ -228,7 +240,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
   const acceptAnswer = useAcceptAnswer();
 
   const canAcceptAnswer = user && (user.id === postAuthorId || canModerate);
-  const score = comment.upvotes - comment.downvotes;
+  const score = localUpvotes - localDownvotes;
   const maxDepth = 4;
 
   const handleVote = async (voteType: 1 | -1) => {
@@ -237,13 +249,40 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
       return;
     }
     
+    // Store previous state for rollback
+    const prevUpvotes = localUpvotes;
+    const prevDownvotes = localDownvotes;
+    const prevUserVote = userVote;
+    
     try {
+      // Optimistic update
+      if (userVote === voteType) {
+        // Remove vote
+        if (voteType === 1) setLocalUpvotes(v => v - 1);
+        else setLocalDownvotes(v => v - 1);
+        setUserVote(null);
+      } else {
+        // Add or change vote
+        if (voteType === 1) {
+          setLocalUpvotes(v => v + 1);
+          if (userVote === -1) setLocalDownvotes(v => v - 1);
+        } else {
+          setLocalDownvotes(v => v + 1);
+          if (userVote === 1) setLocalUpvotes(v => v - 1);
+        }
+        setUserVote(voteType);
+      }
+
       await vote.mutateAsync({
         commentId: comment.id,
         voteType,
-        currentVote: comment.userVote || null,
+        currentVote: prevUserVote,
       });
     } catch (error: any) {
+      // Revert on error
+      setLocalUpvotes(prevUpvotes);
+      setLocalDownvotes(prevDownvotes);
+      setUserVote(prevUserVote);
       toast.error(error.message || 'Failed to vote');
     }
   };
@@ -305,7 +344,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
               onClick={() => handleVote(1)}
               className={cn(
                 "vote-button",
-                comment.userVote === 1 && "upvoted"
+                userVote === 1 && "upvoted"
               )}
               disabled={vote.isPending}
             >
@@ -322,7 +361,7 @@ function CommentCard({ comment, postId, postAuthorId, depth }: CommentCardProps)
               onClick={() => handleVote(-1)}
               className={cn(
                 "vote-button",
-                comment.userVote === -1 && "downvoted"
+                userVote === -1 && "downvoted"
               )}
               disabled={vote.isPending}
             >
