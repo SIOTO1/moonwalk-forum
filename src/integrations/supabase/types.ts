@@ -14,6 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_campaigns: {
+        Row: {
+          clicks_count: number
+          cost_per_impression_cents: number
+          created_at: string
+          daily_budget_cents: number
+          description: string | null
+          end_date: string | null
+          id: string
+          impressions_count: number
+          name: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          spent_cents: number
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          target_categories: string[] | null
+          total_budget_cents: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          clicks_count?: number
+          cost_per_impression_cents?: number
+          created_at?: string
+          daily_budget_cents?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions_count?: number
+          name: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          spent_cents?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_categories?: string[] | null
+          total_budget_cents?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          clicks_count?: number
+          cost_per_impression_cents?: number
+          created_at?: string
+          daily_budget_cents?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions_count?: number
+          name?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          spent_cents?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_categories?: string[] | null
+          total_budget_cents?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
+      ad_clicks: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          sponsored_post_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          sponsored_post_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          sponsored_post_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_clicks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_clicks_sponsored_post_id_fkey"
+            columns: ["sponsored_post_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_impressions: {
+        Row: {
+          campaign_id: string
+          category_id: string | null
+          created_at: string
+          id: string
+          sponsored_post_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          sponsored_post_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          sponsored_post_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_impressions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_impressions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_impressions_sponsored_post_id_fkey"
+            columns: ["sponsored_post_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           bg_color: string
@@ -888,6 +1042,62 @@ export type Database = {
           },
         ]
       }
+      sponsored_posts: {
+        Row: {
+          campaign_id: string
+          content: string
+          created_at: string
+          cta_text: string | null
+          cta_url: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sponsor_logo_url: string | null
+          sponsor_name: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          content: string
+          created_at?: string
+          cta_text?: string | null
+          cta_url: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sponsor_logo_url?: string | null
+          sponsor_name: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          content?: string
+          created_at?: string
+          cta_text?: string | null
+          cta_url?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sponsor_logo_url?: string | null
+          sponsor_name?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity: {
         Row: {
           activity_type: string
@@ -1140,6 +1350,21 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["membership_tier"]
       }
+      get_sponsored_post_for_category: {
+        Args: { _category_id?: string }
+        Returns: {
+          campaign_id: string
+          content: string
+          cta_text: string
+          cta_url: string
+          id: string
+          image_url: string
+          sponsor_logo_url: string
+          sponsor_name: string
+          tags: string[]
+          title: string
+        }[]
+      }
       get_trending_tags: {
         Args: { limit_count?: number }
         Returns: {
@@ -1163,6 +1388,23 @@ export type Database = {
         Args: { _moderator_id: string; _reason: string; _violation_id: string }
         Returns: boolean
       }
+      record_ad_click: {
+        Args: {
+          _campaign_id: string
+          _sponsored_post_id: string
+          _viewer_id?: string
+        }
+        Returns: boolean
+      }
+      record_ad_impression: {
+        Args: {
+          _campaign_id: string
+          _category_id?: string
+          _sponsored_post_id: string
+          _viewer_id?: string
+        }
+        Returns: boolean
+      }
       search_forum: {
         Args: { search_query: string }
         Returns: {
@@ -1182,6 +1424,15 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
+      campaign_status:
+        | "draft"
+        | "pending_review"
+        | "approved"
+        | "rejected"
+        | "active"
+        | "paused"
+        | "completed"
+        | "cancelled"
       category_visibility: "public" | "pro" | "elite"
       content_status: "active" | "locked" | "removed"
       membership_tier: "free" | "pro" | "elite"
@@ -1342,6 +1593,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin"],
+      campaign_status: [
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected",
+        "active",
+        "paused",
+        "completed",
+        "cancelled",
+      ],
       category_visibility: ["public", "pro", "elite"],
       content_status: ["active", "locked", "removed"],
       membership_tier: ["free", "pro", "elite"],
