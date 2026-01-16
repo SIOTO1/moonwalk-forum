@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, User, Shield } from 'lucide-react';
+import { Search, Menu, X, User, Shield, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,6 +74,12 @@ export function Header({ onSearchChange, searchQuery = '', selectedCategory }: H
               ) : user ? (
               <>
                   <NotificationCenter />
+
+                  <Button variant="ghost" size="icon" asChild className="hidden sm:flex" title="Advertise">
+                    <Link to="/vendor">
+                      <Megaphone className="w-5 h-5" />
+                    </Link>
+                  </Button>
 
                   {canModerate && (
                     <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
