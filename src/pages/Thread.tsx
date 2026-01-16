@@ -8,6 +8,7 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { Logo } from '@/components/forum/Logo';
 import { PostDetail } from '@/components/forum/PostDetail';
 import { PostWithAuthor } from '@/hooks/usePosts';
+import { useRealtimeThreadUpdates } from '@/hooks/useRealtimeUpdates';
 
 export default function Thread() {
   const { slug } = useParams<{ slug: string }>();
@@ -80,6 +81,9 @@ export default function Thread() {
     },
     enabled: !!slug,
   });
+
+  // Subscribe to realtime updates for this thread's votes and comments
+  useRealtimeThreadUpdates(post?.id ?? null);
 
   // Determine if content should be indexed
   const isPrivate = post?.category?.is_private ?? false;
