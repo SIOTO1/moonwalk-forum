@@ -14,6 +14,10 @@ import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import VendorPortal from "./pages/VendorPortal";
+import CampaignEditor from "./pages/CampaignEditor";
+import CampaignAnalytics from "./pages/CampaignAnalytics";
+import AdminAdReview from "./pages/AdminAdReview";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +53,10 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/vendor" element={<VendorPortal />} />
+            <Route path="/vendor/campaigns/:id" element={<CampaignEditor />} />
+            <Route path="/vendor/analytics/:id" element={<CampaignAnalytics />} />
+            <Route path="/admin/ads" element={<AdminAdReview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
