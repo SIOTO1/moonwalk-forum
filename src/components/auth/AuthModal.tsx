@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PasswordStrength, validatePassword } from './PasswordStrength';
-import { Loader2, Mail, Lock, User, Chrome, ArrowLeft } from 'lucide-react';
+import { checkPasswordBreach } from '@/lib/passwordBreachCheck';
+import { Loader2, Mail, Lock, User, Chrome, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,6 +26,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [breachWarning, setBreachWarning] = useState<string | null>(null);
+  const [checkingBreach, setCheckingBreach] = useState(false);
   const { signIn, signUp, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +40,20 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
         toast.error('Please create a stronger password');
         return;
       }
+
+      // Check for breached password
+      setCheckingBreach(true);
+      const breachResult = await checkPasswordBreach(password);
+      setCheckingBreach(false);
+
+      if (breachResult.isBreached) {
+        const countText = breachResult.count.toLocaleString();
+        setBreachWarning(
+          `This password has appeared in ${countText} data breaches. Please choose a different password for your security.`
+        );
+        return;
+      }
+      setBreachWarning(null);
     }
     
     setLoading(true);
@@ -95,6 +113,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
     setPassword('');
     setUsername('');
     setResetEmailSent(false);
+    setBreachWarning(null);
   };
 
   const switchMode = (newMode: AuthMode) => {
@@ -278,26 +297,41 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setBreachWarning(null);
+                  }}
                   className="pl-10"
                   required
                   minLength={8}
                 />
               </div>
               {mode === 'signup' && (
-                <PasswordStrength password={password} />
+                <>
+                  <PasswordStrength password={password} />
+                  {breachWarning && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        {breachWarning}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
               )}
             </div>
 
             <Button
               type="submit"
               className="w-full gradient-accent text-accent-foreground"
-              disabled={loading}
+              disabled={loading || checkingBreach}
             >
-              {loading ? (
+              {loading || checkingBreach ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : mode === 'signin' ? (
                 'Sign In'
+              ) : checkingBreach ? (
+                'Checking password security...'
               ) : (
                 'Create Account'
               )}
