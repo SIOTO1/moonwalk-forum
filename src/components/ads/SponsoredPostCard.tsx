@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ExternalLink, Megaphone, Eye } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,8 @@ export interface SponsoredPost {
 interface SponsoredPostCardProps {
   post: SponsoredPost;
   className?: string;
+  onImpression?: () => void;
+  onCtaClick?: () => void;
 }
 
 // Default placeholder sponsored post
@@ -29,29 +32,50 @@ export const placeholderSponsoredPost: SponsoredPost = {
   sponsorName: 'Advertise with Us',
   sponsorTagline: 'Premium ad placement',
   ctaText: 'Learn More',
-  ctaUrl: 'mailto:ads@moonwalk.forum',
+  ctaUrl: '/vendor',
   tags: ['advertising', 'sponsored'],
 };
 
-// Sample sponsored post for demonstration
-export const sampleSponsoredPost: SponsoredPost = {
-  id: 'sponsored-sample',
-  title: 'Introducing the Next-Gen EVA Suit: SpaceSuit Pro X1',
-  content: 'Experience unprecedented mobility and safety with our revolutionary EVA suit technology. Designed by astronauts, for astronauts. Now available for pre-order with exclusive Moonwalk member discounts.',
-  sponsorName: 'SpaceTech Industries',
-  sponsorTagline: 'Innovation Beyond Earth',
-  imageUrl: '/placeholder.svg',
-  ctaText: 'Pre-Order Now',
-  ctaUrl: 'https://example.com/spacesuit',
-  tags: ['equipment', 'eva', 'safety'],
-  impressions: 12500,
-};
-
-export function SponsoredPostCard({ post, className }: SponsoredPostCardProps) {
+export function SponsoredPostCard({ post, className, onImpression, onCtaClick }: SponsoredPostCardProps) {
   const isPlaceholder = post.id === 'sponsored-placeholder';
+  const hasTrackedImpression = useRef(false);
+  const cardRef = useRef<HTMLElement>(null);
+
+  // Track impression when card becomes visible
+  useEffect(() => {
+    if (!onImpression || hasTrackedImpression.current || isPlaceholder) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasTrackedImpression.current) {
+          hasTrackedImpression.current = true;
+          onImpression();
+        }
+      },
+      { threshold: 0.5 } // 50% visible
+    );
+
+    const currentRef = cardRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [onImpression, isPlaceholder]);
+
+  const handleCtaClick = () => {
+    if (onCtaClick && !isPlaceholder) {
+      onCtaClick();
+    }
+  };
 
   return (
     <article 
+      ref={cardRef}
       className={cn(
         "forum-card p-4 animate-fade-in relative",
         isPlaceholder && "border-dashed",
@@ -107,9 +131,10 @@ export function SponsoredPostCard({ post, className }: SponsoredPostCardProps) {
           {post.imageUrl && (
             <a 
               href={post.ctaUrl} 
-              target="_blank" 
+              target={isPlaceholder ? "_self" : "_blank"}
               rel="noopener noreferrer sponsored"
               className="block mb-3"
+              onClick={handleCtaClick}
             >
               <img 
                 src={post.imageUrl} 
@@ -167,8 +192,9 @@ export function SponsoredPostCard({ post, className }: SponsoredPostCardProps) {
             {/* CTA Button */}
             <a
               href={post.ctaUrl}
-              target="_blank"
+              target={isPlaceholder ? "_self" : "_blank"}
               rel="noopener noreferrer sponsored"
+              onClick={handleCtaClick}
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
                 isPlaceholder 
