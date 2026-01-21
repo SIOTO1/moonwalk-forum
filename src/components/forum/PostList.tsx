@@ -1,11 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { PostWithAuthor } from '@/hooks/usePosts';
 import { PostCard } from './PostCard';
-import { SponsoredPostCard, placeholderSponsoredPost } from '@/components/ads/SponsoredPostCard';
+import { SponsoredPostCard, placeholderSponsoredPost, SponsoredPost } from '@/components/ads/SponsoredPostCard';
 import { Button } from '@/components/ui/button';
 import { Flame, Clock, HelpCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSponsoredPost } from '@/hooks/useSponsoredPost';
+
 type SortOption = 'popular' | 'newest' | 'unanswered';
 
 interface PostListProps {
@@ -18,6 +20,7 @@ interface PostListProps {
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
   onPrefetchNext?: () => void;
+  categoryId?: string | null;
 }
 
 export function PostList({ 
@@ -30,10 +33,31 @@ export function PostList({
   isFetchingNextPage = false,
   onLoadMore,
   onPrefetchNext,
+  categoryId,
 }: PostListProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const prefetchRef = useRef<HTMLDivElement>(null);
   const hasPrefetched = useRef(false);
+
+  // Fetch real sponsored post from database
+  const { sponsoredPost, trackImpression, trackClick } = useSponsoredPost(categoryId);
+
+  // Transform database post to component format
+  const displaySponsoredPost: SponsoredPost = useMemo(() => {
+    if (!sponsoredPost) return placeholderSponsoredPost;
+    
+    return {
+      id: sponsoredPost.id,
+      title: sponsoredPost.title,
+      content: sponsoredPost.content,
+      sponsorName: sponsoredPost.sponsor_name,
+      sponsorLogo: sponsoredPost.sponsor_logo_url,
+      imageUrl: sponsoredPost.image_url,
+      ctaText: sponsoredPost.cta_text,
+      ctaUrl: sponsoredPost.cta_url,
+      tags: sponsoredPost.tags,
+    };
+  }, [sponsoredPost]);
 
   // Reset prefetch flag when posts change (new query or page loaded)
   useEffect(() => {
@@ -171,7 +195,11 @@ export function PostList({
                 {/* Insert sponsored post after 3rd post */}
                 {index === 2 && (
                   <div className="mt-3">
-                    <SponsoredPostCard post={placeholderSponsoredPost} />
+                    <SponsoredPostCard 
+                      post={displaySponsoredPost} 
+                      onImpression={trackImpression}
+                      onCtaClick={trackClick}
+                    />
                   </div>
                 )}
               </div>

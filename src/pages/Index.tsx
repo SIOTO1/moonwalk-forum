@@ -108,6 +108,7 @@ const Index = () => {
               isFetchingNextPage={isFetchingNextPage}
               onLoadMore={() => fetchNextPage()}
               onPrefetchNext={prefetchNextPage}
+              categoryId={selectedCategoryInfo?.id}
             />
             
             {/* Right Sidebar - Trending */}
