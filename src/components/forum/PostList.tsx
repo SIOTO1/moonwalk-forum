@@ -42,10 +42,18 @@ export function PostList({
   // Fetch real sponsored post from database
   const { sponsoredPost, trackImpression, trackClick } = useSponsoredPost(categoryId);
 
-  // Transform database post to component format
+  // Transform database post to component format, filtering out legacy placeholder content
   const displaySponsoredPost: SponsoredPost = useMemo(() => {
     if (!sponsoredPost) return placeholderSponsoredPost;
-    
+
+    // Detect legacy space-themed seed data and replace with party rental placeholder
+    const isLegacySeedData =
+      /space engineer/i.test(sponsoredPost.content) ||
+      /ToolMaster/i.test(sponsoredPost.title) ||
+      /ToolMaster/i.test(sponsoredPost.sponsor_name);
+
+    if (isLegacySeedData) return placeholderSponsoredPost;
+
     return {
       id: sponsoredPost.id,
       title: sponsoredPost.title,

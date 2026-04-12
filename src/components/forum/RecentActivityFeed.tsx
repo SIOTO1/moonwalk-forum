@@ -1,5 +1,9 @@
 import { MessageCircle, ThumbsUp, CheckCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 
 interface Activity {
   id: string;
@@ -7,51 +11,86 @@ interface Activity {
   user: string;
   content: string;
   thread: string;
-  time: Date;
+  threadSlug: string;
+  time: string;
 }
 
-const recentActivity: Activity[] = [
-  {
-    id: '1',
-    type: 'reply',
-    user: 'Sarah Chen',
-    content: 'replied to',
-    thread: 'Best practices for winterizing inflatables',
-    time: new Date(Date.now() - 5 * 60 * 1000),
-  },
-  {
-    id: '2',
-    type: 'accepted',
-    user: 'Mike Johnson',
-    content: 'answer was accepted in',
-    thread: 'Insurance requirements for large events',
-    time: new Date(Date.now() - 12 * 60 * 1000),
-  },
-  {
-    id: '3',
-    type: 'vote',
-    user: 'Alex Rivera',
-    content: 'upvoted',
-    thread: 'New DOT regulations for trailer transport',
-    time: new Date(Date.now() - 25 * 60 * 1000),
-  },
-  {
-    id: '4',
-    type: 'reply',
-    user: 'Jessica Park',
-    content: 'replied to',
-    thread: 'How to handle last-minute cancellations',
-    time: new Date(Date.now() - 45 * 60 * 1000),
-  },
-  {
-    id: '5',
-    type: 'accepted',
-    user: 'David Lee',
-    content: 'answer was accepted in',
-    thread: 'Pricing strategies for peak season',
-    time: new Date(Date.now() - 90 * 60 * 1000),
-  },
-];
+function useRecentActivity() {
+  return useQuery({
+    queryKey: ['recent-activity'],
+    queryFn: async (): Promise<Activity[]> => {
+      const activities: Activity[] = [];
+
+      // Fetch recent comments (replies)
+      const { data: recentComments } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          created_at,
+          post:posts!comments_post_id_fkey(title, slug),
+          author:profiles!comments_author_id_fkey(display_name, username)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (recentComments) {
+        for (const comment of recentComments) {
+          const post = comment.post as any;
+          const author = comment.author as any;
+          if (post && author) {
+            activities.push({
+              id: `comment-${comment.id}`,
+              type: 'reply',
+              user: author.display_name || author.username || 'Anonymous',
+              content: 'replied to',
+              thread: post.title,
+              threadSlug: post.slug || comment.id,
+              time: comment.created_at,
+            });
+          }
+        }
+      }
+
+      // Fetch recent votes
+      const { data: recentVotes } = await supabase
+        .from('votes')
+        .select(`
+          id,
+          created_at,
+          vote_type,
+          post:posts!votes_post_id_fkey(title, slug),
+          user:profiles!votes_user_id_fkey(display_name, username)
+        `)
+        .eq('vote_type', 1)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (recentVotes) {
+        for (const vote of recentVotes) {
+          const post = vote.post as any;
+          const user = vote.user as any;
+          if (post && user) {
+            activities.push({
+              id: `vote-${vote.id}`,
+              type: 'vote',
+              user: user.display_name || user.username || 'Anonymous',
+              content: 'upvoted',
+              thread: post.title,
+              threadSlug: post.slug || vote.id,
+              time: vote.created_at,
+            });
+          }
+        }
+      }
+
+      // Sort all activities by time (most recent first) and take top 5
+      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      return activities.slice(0, 5);
+    },
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 60, // Refresh every minute
+  });
+}
 
 const activityIcons = {
   reply: MessageCircle,
@@ -66,6 +105,8 @@ const activityColors = {
 };
 
 export function RecentActivityFeed() {
+  const { data: activities, isLoading } = useRecentActivity();
+
   return (
     <div className="forum-card p-4">
       <div className="flex items-center gap-2 mb-4">
@@ -73,34 +114,51 @@ export function RecentActivityFeed() {
         <h3 className="font-display font-semibold">Recent Activity</h3>
       </div>
       <div className="space-y-3">
-        {recentActivity.map((activity) => {
-          const Icon = activityIcons[activity.type];
-          const colorClass = activityColors[activity.type];
-          
-          return (
-            <div 
-              key={activity.id}
-              className="flex items-start gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <div className={`mt-0.5 ${colorClass}`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">
-                  <span className="font-medium text-foreground">{activity.user}</span>
-                  {' '}
-                  <span className="text-muted-foreground">{activity.content}</span>
-                </p>
-                <p className="text-sm text-foreground font-medium truncate">
-                  {activity.thread}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {formatDistanceToNow(activity.time, { addSuffix: true })}
-                </p>
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 p-2">
+              <Skeleton className="w-4 h-4 mt-0.5 rounded" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
             </div>
-          );
-        })}
+          ))
+        ) : activities && activities.length > 0 ? (
+          activities.map((activity) => {
+            const Icon = activityIcons[activity.type];
+            const colorClass = activityColors[activity.type];
+            
+            return (
+              <Link 
+                key={activity.id}
+                to={`/thread/${activity.threadSlug}`}
+                className="flex items-start gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer block"
+              >
+                <div className={`mt-0.5 ${colorClass}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">
+                    <span className="font-medium text-foreground">{activity.user}</span>
+                    {' '}
+                    <span className="text-muted-foreground">{activity.content}</span>
+                  </p>
+                  <p className="text-sm text-foreground font-medium truncate">
+                    {activity.thread}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
+                  </p>
+                </div>
+              </Link>
+            );
+          })
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No recent activity yet. Be the first to post!
+          </p>
+        )}
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { frequency }: DigestRequest = await req.json();
-    const siteUrl = Deno.env.get("SITE_URL") || "https://your-forum.com";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://moonwalkforum.com";
 
     // Get users with this frequency preference who have pending notifications
     const { data: usersWithPrefs } = await supabase

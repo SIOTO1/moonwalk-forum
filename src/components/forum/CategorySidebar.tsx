@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Category } from '@/hooks/useCategories';
+import { useCommunityStats } from '@/hooks/useCommunityStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { Lock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle, Star, Crown, ShieldCheck, Download, Home, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +35,7 @@ export function CategorySidebar({
   isLoading = false,
 }: CategorySidebarProps) {
   const { canAccessPremium, profile } = useAuth();
+  const { data: stats, isLoading: statsLoading } = useCommunityStats();
   
   const publicCategories = categories.filter(c => !c.is_private);
   const privateCategories = categories.filter(c => c.is_private);
@@ -113,7 +115,7 @@ export function CategorySidebar({
           </div>
         )}
 
-        {/* Quick Stats */}
+        {/* Quick Stats - Connected to real data */}
         <div className="bg-secondary/50 rounded-xl p-4 border border-border/50">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
@@ -122,17 +124,33 @@ export function CategorySidebar({
           <div className="space-y-2.5 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Members</span>
-              <span className="font-semibold text-foreground">12,453</span>
+              <span className="font-semibold text-foreground">
+                {statsLoading ? (
+                  <Skeleton className="h-4 w-12 inline-block" />
+                ) : (
+                  (stats?.totalMembers || 0).toLocaleString()
+                )}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Posts Today</span>
-              <span className="font-semibold text-foreground">47</span>
+              <span className="font-semibold text-foreground">
+                {statsLoading ? (
+                  <Skeleton className="h-4 w-8 inline-block" />
+                ) : (
+                  stats?.postsToday || 0
+                )}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Active Now</span>
               <span className="font-semibold text-success flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                234
+                {statsLoading ? (
+                  <Skeleton className="h-4 w-8 inline-block" />
+                ) : (
+                  stats?.activeNow || 0
+                )}
               </span>
             </div>
           </div>

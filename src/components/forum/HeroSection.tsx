@@ -1,6 +1,7 @@
 import { ArrowRight, Users, MessageSquare, Shield, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommunityStats } from '@/hooks/useCommunityStats';
 
 interface HeroSectionProps {
   onOpenSignUp: () => void;
@@ -8,11 +9,18 @@ interface HeroSectionProps {
 
 export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
   const { user } = useAuth();
+  const { data: stats } = useCommunityStats();
 
-  const stats = [
-    { icon: Users, label: 'Active Members', value: '12,400+' },
-    { icon: MessageSquare, label: 'Discussions', value: '45,000+' },
-    { icon: Shield, label: 'Verified Experts', value: '850+' },
+  const formatStat = (value: number | undefined): string => {
+    if (!value) return '0';
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K+`;
+    return `${value}+`;
+  };
+
+  const heroStats = [
+    { icon: Users, label: 'Active Members', value: formatStat(stats?.totalMembers) },
+    { icon: MessageSquare, label: 'Posts Today', value: stats?.postsToday?.toString() || '0' },
+    { icon: Shield, label: 'Active Now', value: stats?.activeNow?.toString() || '0' },
   ];
 
   const benefits = [
@@ -38,7 +46,7 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
               </span>
-              234 members online now
+              {stats?.activeNow || 0} members online now
             </div>
 
             <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
@@ -64,6 +72,7 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
                 size="lg" 
                 variant="outline"
                 className="gap-2 text-base"
+                onClick={() => document.getElementById('forum-content')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Explore Discussions
               </Button>
@@ -83,7 +92,7 @@ export function HeroSection({ onOpenSignUp }: HeroSectionProps) {
           {/* Right - Stats Cards */}
           <div className="hidden lg:block">
             <div className="grid grid-cols-3 gap-4">
-              {stats.map(({ icon: Icon, label, value }) => (
+              {heroStats.map(({ icon: Icon, label, value }) => (
                 <div 
                   key={label}
                   className="forum-card p-6 text-center hover:border-primary/30 transition-colors"

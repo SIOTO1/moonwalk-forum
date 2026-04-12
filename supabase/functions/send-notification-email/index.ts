@@ -111,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const recipientEmail = userData.user.email;
-    const siteUrl = Deno.env.get("SITE_URL") || "https://your-forum.com";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://moonwalkforum.com";
 
     // Compose email based on notification type
     let subject = "";

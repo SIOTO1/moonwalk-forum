@@ -28,7 +28,7 @@ interface SponsoredPostCardProps {
 export const placeholderSponsoredPost: SponsoredPost = {
   id: 'sponsored-placeholder',
   title: 'Reach the Moonwalk Community',
-  content: 'Promote your space-related products and services to thousands of engaged astronauts and space enthusiasts. Our sponsored posts blend seamlessly with organic content while clearly identifying your brand.',
+  content: 'Promote your party rental products and services to thousands of engaged industry professionals. Our sponsored posts blend seamlessly with organic content while clearly identifying your brand.',
   sponsorName: 'Advertise with Us',
   sponsorTagline: 'Premium ad placement',
   ctaText: 'Learn More',

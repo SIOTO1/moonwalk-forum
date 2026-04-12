@@ -24,7 +24,7 @@ const defaultPlaceholder: AdSlot = {
   id: 'placeholder-1',
   type: 'placeholder',
   title: 'Your Ad Here',
-  description: 'Reach thousands of space enthusiasts. Contact us to advertise.',
+  description: 'Reach thousands of party rental professionals. Contact us to advertise.',
   sponsorName: 'Advertise with Moonwalk',
 };
 
@@ -120,7 +120,7 @@ export function SidebarAdBanner({
           </a>
         ) : isPlaceholder ? (
           <a
-            href="mailto:ads@moonwalk.forum"
+            href="mailto:info@themoonwalkforum.com"
             className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
           >
             Contact us <ExternalLink className="h-3 w-3" />
@@ -144,11 +144,11 @@ export function SidebarAdBanner({
 export const sampleVendorAd: AdSlot = {
   id: 'vendor-sample',
   type: 'vendor',
-  title: 'SpaceSuit Pro X1',
-  description: 'The most advanced EVA suit for professional astronauts. 30% off for Moonwalk members.',
+  title: 'InflataPro Commercial Bouncer',
+  description: 'The most durable commercial-grade bounce house for rental operators. 30% off for Moonwalk members.',
   imageUrl: '/placeholder.svg',
-  linkUrl: 'https://example.com/spacesuit',
-  sponsorName: 'SpaceTech Industries',
+  linkUrl: 'https://example.com/inflatapro',
+  sponsorName: 'InflataPro Equipment',
 };
 
 // External ad network slot (e.g., Google AdSense placeholder)

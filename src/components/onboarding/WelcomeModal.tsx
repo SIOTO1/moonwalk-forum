@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Rocket, MessageSquare, Star, Shield, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { PartyPopper, MessageSquare, Star, Shield, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const steps = [
   {
-    icon: Rocket,
+    icon: PartyPopper,
     title: "Welcome to Moonwalk Forum!",
-    description: "You've joined the premier community for astronauts and space enthusiasts. Let's get you started.",
+    description: "You've joined the premier community for party rental operators and inflatable industry professionals. Let's get you started.",
     tips: [
       "Explore discussion categories on the left sidebar",
       "Browse trending topics to see what's popular",
@@ -20,7 +20,7 @@ const steps = [
   {
     icon: MessageSquare,
     title: "Start Engaging",
-    description: "Share your knowledge and learn from the community.",
+    description: "Share your knowledge and learn from fellow party rental professionals.",
     tips: [
       "Create discussions using the 'New Thread' button",
       "Comment on posts to share your insights",
@@ -40,7 +40,7 @@ const steps = [
   {
     icon: Shield,
     title: "Community Guidelines",
-    description: "We're committed to maintaining a respectful, professional environment.",
+    description: "We're committed to maintaining a respectful, professional environment for all party rental operators.",
     tips: [
       "Be respectful and constructive in discussions",
       "Report content that violates our guidelines",
@@ -155,7 +155,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
             {isLastStep ? (
               <>
                 Get Started
-                <Rocket className="h-4 w-4" />
+                <PartyPopper className="h-4 w-4" />
               </>
             ) : (
               <>

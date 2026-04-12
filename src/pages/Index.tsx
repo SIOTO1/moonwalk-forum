@@ -63,10 +63,10 @@ const Index = () => {
 
   const pageTitle = selectedCategoryInfo
     ? `${selectedCategoryInfo.name} - Moonwalk Forum`
-    : 'Moonwalk Forum - Professional Astronaut Community';
+    : 'Moonwalk Forum - The Party Rental Industry\'s Premier Community';
 
   const pageDescription = selectedCategoryInfo?.description
-    || 'Join the premier community for astronauts and space enthusiasts. Discuss equipment, share experiences, and connect with experts.';
+    || 'Join the premier community for party rental operators and inflatable industry professionals. Discuss equipment, share experiences, and connect with experts.';
 
   return (
     <>
@@ -89,7 +89,7 @@ const Index = () => {
           {/* Hero Section for non-logged-in users */}
           <HeroSection onOpenSignUp={() => setAuthModalOpen(true)} />
 
-          <div className="flex gap-6">
+          <div id="forum-content" className="flex gap-6">
             {/* Left Sidebar - Categories */}
             <CategorySidebar
               categories={categories}

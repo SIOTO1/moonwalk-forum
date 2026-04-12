@@ -12,8 +12,8 @@ interface SEOHeadProps {
 }
 
 export function SEOHead({
-  title = 'Moonwalk Forum - Professional Astronaut Community',
-  description = 'Join the premier community for astronauts and space enthusiasts. Discuss equipment, share experiences, and connect with experts.',
+  title = 'Moonwalk Forum - The Party Rental Industry\'s Premier Community',
+  description = 'Join the premier community for party rental operators and inflatable industry professionals. Discuss equipment, share experiences, and connect with experts.',
   canonical,
   noindex = false,
   ogImage = '/og-image.png',
