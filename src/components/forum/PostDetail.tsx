@@ -5,6 +5,7 @@ import { useUserBadges, Badge } from '@/hooks/useBadges';
 import { useAuth } from '@/contexts/AuthContext';
 import { CommentThread } from './CommentThread';
 import { ThreadImageGallery } from './ThreadImageGallery';
+import { ContentWithVideos } from './VideoEmbed';
 import { SocialShareButtons } from './SocialShareButtons';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
@@ -277,12 +278,8 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
             </div>
 
             {/* Content */}
-            <div className="prose prose-invert prose-sm max-w-none mb-6">
-              {post.content.split('\n').map((paragraph, i) => (
-                <p key={i} className="text-foreground/90 leading-relaxed">
-                  {paragraph}
-                </p>
-              ))}
+            <div className="mb-6">
+              <ContentWithVideos content={post.content} />
             </div>
 
             {/* Images */}

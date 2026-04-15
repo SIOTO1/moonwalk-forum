@@ -24,7 +24,8 @@ import {
 } from '@/components/ui/select';
 import { ContentViolationWarning } from '@/components/moderation/ContentViolationWarning';
 import { ThreadImageUpload } from './ThreadImageUpload';
-import { Plus, X, Lock, AlertTriangle } from 'lucide-react';
+import { VideoLinkInput } from './VideoLinkInput';
+import { Plus, X, Lock, AlertTriangle, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CreateThreadDialogProps {
@@ -45,6 +46,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [videoLinks, setVideoLinks] = useState<string[]>([]);
   
   // Content moderation states
   const [showViolationWarning, setShowViolationWarning] = useState(false);
@@ -136,9 +138,15 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
     }
 
     try {
+      // Append video links to content if any
+      let finalContent = content.trim();
+      if (videoLinks.length > 0) {
+        finalContent += '\n\n' + videoLinks.join('\n');
+      }
+
       await createPost.mutateAsync({
         title: title.trim(),
-        content: content.trim(),
+        content: finalContent,
         category_id: categoryId,
         tags,
         images,
@@ -154,6 +162,7 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
       setCategoryId('');
       setTags([]);
       setImages([]);
+      setVideoLinks([]);
       setContentWarning(null);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create thread');
@@ -254,6 +263,19 @@ export function CreateThreadDialog({ defaultCategorySlug }: CreateThreadDialogPr
               />
             </div>
           )}
+
+          {/* Videos */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Videos (optional)
+            </Label>
+            <VideoLinkInput
+              videoLinks={videoLinks}
+              onVideoLinksChange={setVideoLinks}
+              maxVideos={3}
+            />
+          </div>
 
           {/* Tags */}
           <div className="space-y-2">
