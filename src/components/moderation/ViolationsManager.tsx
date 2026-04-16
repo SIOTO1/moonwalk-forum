@@ -52,6 +52,8 @@ export function ViolationsManager() {
   const [selectedViolation, setSelectedViolation] = useState<Violation | null>(null);
   const [overrideReason, setOverrideReason] = useState('');
 
+  const [showUserIdentity, setShowUserIdentity] = useState(false);
+
   const { data: violations = [], isLoading } = useQuery({
     queryKey: ['content-violations'],
     queryFn: async () => {
@@ -142,7 +144,20 @@ export function ViolationsManager() {
             Review and manage content policy violations
           </p>
         </div>
+        <Button
+          variant={showUserIdentity ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setShowUserIdentity(!showUserIdentity)}
+          className="flex items-center gap-2"
+        >
+          {showUserIdentity ? 'Hide' : 'Show'} User Identity
+        </Button>
       </div>
+      {!showUserIdentity && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
+          <strong>Blind Review Mode:</strong> User identities are hidden to prevent bias. Toggle "Show User Identity" only when needed for context.
+        </div>
+      )}
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -186,12 +201,25 @@ export function ViolationsManager() {
                 <TableRow key={violation.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">
-                        {violation.profile?.display_name || violation.profile?.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        @{violation.profile?.username}
-                      </p>
+                      {showUserIdentity ? (
+                        <>
+                          <p className="font-medium">
+                            {violation.profile?.display_name || violation.profile?.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            @{violation.profile?.username}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-muted-foreground italic">
+                            User #{violation.id.slice(0, 6)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Identity hidden
+                          </p>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

@@ -164,21 +164,24 @@ export function useAdCampaigns() {
 }
 
 export function useCampaign(campaignId: string | undefined) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['ad-campaign', campaignId],
+    queryKey: ['ad-campaign', campaignId, user?.id],
     queryFn: async () => {
-      if (!campaignId) return null;
+      if (!campaignId || !user) return null;
 
       const { data, error } = await supabase
         .from('ad_campaigns')
         .select('*')
         .eq('id', campaignId)
+        .eq('vendor_id', user.id)
         .single();
 
       if (error) throw error;
       return data as AdCampaign;
     },
-    enabled: !!campaignId,
+    enabled: !!campaignId && !!user,
   });
 }
 
@@ -272,10 +275,24 @@ export function useSponsoredPosts(campaignId: string | undefined) {
 }
 
 export function useCampaignAnalytics(campaignId: string | undefined) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['campaign-analytics', campaignId],
+    queryKey: ['campaign-analytics', campaignId, user?.id],
     queryFn: async () => {
-      if (!campaignId) return null;
+      if (!campaignId || !user) return null;
+
+      // Verify the user owns this campaign before fetching analytics
+      const { data: campaign, error: ownerError } = await supabase
+        .from('ad_campaigns')
+        .select('id')
+        .eq('id', campaignId)
+        .eq('vendor_id', user.id)
+        .single();
+
+      if (ownerError || !campaign) {
+        throw new Error('Campaign not found or access denied');
+      }
 
       // Get impressions over time
       const { data: impressions, error: impError } = await supabase
@@ -328,6 +345,6 @@ export function useCampaignAnalytics(campaignId: string | undefined) {
         chartData,
       };
     },
-    enabled: !!campaignId,
+    enabled: !!campaignId && !!user,
   });
 }

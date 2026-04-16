@@ -1,20 +1,41 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCampaign, useCampaignAnalytics, useSponsoredPosts } from '@/hooks/useAdCampaigns';
+import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/forum/Header';
 import { Footer } from '@/components/forum/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Eye, MousePointer, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Eye, MousePointer, TrendingUp, DollarSign, BarChart3, AlertCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format } from 'date-fns';
 
 export default function CampaignAnalytics() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(id);
   const { data: analytics, isLoading: loadingAnalytics } = useCampaignAnalytics(id);
   const { posts } = useSponsoredPosts(id);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-12 max-w-4xl">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+              <p className="text-muted-foreground">You must be logged in to view campaign analytics.</p>
+              <Button className="mt-4" onClick={() => navigate('/')}>Go Home</Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (loadingCampaign || loadingAnalytics) {
     return (
