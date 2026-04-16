@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Eye, Pin, CheckCircle2, Clock, ChevronUp, ChevronDown, Lock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download } from 'lucide-react';
+import { MessageCircle, Eye, Pin, CheckCircle2, Clock, ChevronUp, ChevronDown, Lock, Rocket, Shield, Wrench, FileText, TrendingUp, Users, AlertTriangle, MapPin, MessageCircle as MessageCircleIcon, Star, Crown, ShieldCheck, Download, Facebook } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -224,6 +224,23 @@ export function PostCard({ post, onSelect }: PostCardProps) {
                 <Eye className="w-3.5 h-3.5" />
                 {post.view_count}
               </span>
+            </div>
+
+            {/* Share to Facebook */}
+            <div className="hidden sm:flex items-center" onClick={e => { e.stopPropagation(); e.preventDefault(); }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + threadUrl)}&quote=${encodeURIComponent(`Check out this discussion on the Moonwalk Forum: "${post.title}"`)}`;
+                  window.open(shareUrl, 'facebook-share', 'width=626,height=436');
+                }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-[#1877F2] transition-colors"
+                title="Share to Facebook Group"
+              >
+                <Facebook className="w-3.5 h-3.5" />
+                Share
+              </button>
             </div>
 
             {/* Mobile Votes */}

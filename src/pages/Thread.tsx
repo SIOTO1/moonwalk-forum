@@ -157,10 +157,13 @@ export default function Thread() {
         title={`${post.title} - Moonwalk Forum`}
         description={post.content.substring(0, 155)}
         canonical={canonicalUrl}
-        noindex={isPrivate} // Private content should not be indexed
+        noindex={isPrivate}
         ogType="article"
+        ogImage={post.images && post.images.length > 0 ? post.images[0] : undefined}
         articlePublishedTime={post.created_at}
         articleAuthor={post.author?.display_name || post.author?.username || 'Anonymous'}
+        articleTags={post.tags || []}
+        articleSection={post.category?.name || 'General Discussion'}
       />
 
       <div className="min-h-screen bg-background">

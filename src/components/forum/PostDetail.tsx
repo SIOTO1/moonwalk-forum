@@ -7,6 +7,7 @@ import { CommentThread } from './CommentThread';
 import { ThreadImageGallery } from './ThreadImageGallery';
 import { ContentWithVideos } from './VideoEmbed';
 import { SocialShareButtons } from './SocialShareButtons';
+import { FacebookShareButton } from './FacebookShareButton';
 import { MembershipBadge } from '@/components/auth/MembershipBadge';
 import { UserBadgesList } from '@/components/badges/UserBadgeDisplay';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
@@ -360,6 +361,11 @@ export function PostDetail({ post, onBack }: PostDetailProps) {
                     </Button>
                   </>
                 )}
+                <FacebookShareButton
+                  url={window.location.href}
+                  title={post.title}
+                  variant="prominent"
+                />
                 <SocialShareButtons 
                   url={window.location.href}
                   title={post.title}
