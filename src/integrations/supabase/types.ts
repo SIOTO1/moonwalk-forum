@@ -359,21 +359,18 @@ export type Database = {
         Row: {
           agreed_at: string
           id: string
-          ip_address: string | null
           user_id: string
           version: string
         }
         Insert: {
           agreed_at?: string
           id?: string
-          ip_address?: string | null
           user_id: string
           version?: string
         }
         Update: {
           agreed_at?: string
           id?: string
-          ip_address?: string | null
           user_id?: string
           version?: string
         }
@@ -1385,7 +1382,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_shadow_banned: { Args: { _user_id: string }; Returns: boolean }
       override_violation: {
-        Args: { _moderator_id: string; _reason: string; _violation_id: string }
+        Args: { _reason: string; _violation_id: string }
         Returns: boolean
       }
       record_ad_click: {
