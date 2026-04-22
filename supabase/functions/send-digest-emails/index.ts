@@ -9,19 +9,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface PendingNotification {
-  id: string;
-  recipient_user_id: string;
-  notification_type: string;
-  thread_id: string;
-  comment_id: string | null;
-  author_id: string;
-  content_preview: string;
-  created_at: string;
-}
-
 interface DigestRequest {
   frequency: "daily" | "weekly";
+}
+
+// Escape user-controlled strings before embedding them into HTML email bodies.
+function escapeHtml(input: unknown): string {
+  const str = String(input ?? "");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,13 +31,61 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ---- AUTH: this is an admin/cron job — require either the service-role
+    //      key or an authenticated admin user. Never allow anonymous callers. ----
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    const token = authHeader.replace("Bearer ", "");
+
+    let authorized = false;
+    if (token === supabaseServiceKey) {
+      // Internal cron / scheduled job invocation
+      authorized = true;
+    } else {
+      // Otherwise the caller must be an authenticated admin
+      const userScopedClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claimsData, error: claimsError } =
+        await userScopedClient.auth.getClaims(token);
+      if (!claimsError && claimsData?.claims?.sub) {
+        const adminCheckClient = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: isAdminData } = await adminCheckClient.rpc("is_admin", {
+          _user_id: claimsData.claims.sub,
+        });
+        if (isAdminData === true) {
+          authorized = true;
+        }
+      }
+    }
+
+    if (!authorized) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { frequency }: DigestRequest = await req.json();
+    if (frequency !== "daily" && frequency !== "weekly") {
+      return new Response(
+        JSON.stringify({ error: "Invalid frequency" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const siteUrl = Deno.env.get("SITE_URL") || "https://moonwalkforum.com";
 
-    // Get users with this frequency preference who have pending notifications
     const { data: usersWithPrefs } = await supabase
       .from("notification_preferences")
       .select("user_id")
@@ -50,11 +98,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const userIds = usersWithPrefs.map(u => u.user_id);
+    const userIds = usersWithPrefs.map((u) => u.user_id);
     let emailsSent = 0;
 
     for (const userId of userIds) {
-      // Get pending notifications for this user
       const { data: notifications } = await supabase
         .from("pending_notifications")
         .select("*")
@@ -64,60 +111,68 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (!notifications || notifications.length === 0) continue;
 
-      // Get user email
       const { data: userData } = await supabase.auth.admin.getUserById(userId);
       if (!userData?.user?.email) continue;
 
-      // Get thread titles for notifications
-      const threadIds = [...new Set(notifications.map(n => n.thread_id))];
+      const threadIds = [...new Set(notifications.map((n) => n.thread_id))];
       const { data: threads } = await supabase
         .from("posts")
         .select("id, title, slug")
         .in("id", threadIds);
 
-      const threadMap = new Map(threads?.map(t => [t.id, t]) || []);
+      const threadMap = new Map(threads?.map((t) => [t.id, t]) || []);
 
-      // Get author names
-      const authorIds = [...new Set(notifications.map(n => n.author_id))];
+      const authorIds = [...new Set(notifications.map((n) => n.author_id))];
       const { data: authors } = await supabase
         .from("profiles")
         .select("user_id, display_name, username")
         .in("user_id", authorIds);
 
-      const authorMap = new Map(authors?.map(a => [a.user_id, a.display_name || a.username]) || []);
+      const authorMap = new Map(
+        authors?.map((a) => [a.user_id, a.display_name || a.username]) || []
+      );
 
-      // Build digest HTML
-      const notificationItems = notifications.map(n => {
-        const thread = threadMap.get(n.thread_id);
-        const authorName = authorMap.get(n.author_id) || "Someone";
-        const threadTitle = thread?.title || "a discussion";
-        const threadSlug = thread?.slug || n.thread_id;
+      const notificationItems = notifications
+        .map((n) => {
+          const thread = threadMap.get(n.thread_id);
+          const authorName = authorMap.get(n.author_id) || "Someone";
+          const threadTitle = thread?.title || "a discussion";
+          const threadSlug = thread?.slug || n.thread_id;
 
-        let actionText = "";
-        switch (n.notification_type) {
-          case "thread_reply":
-            actionText = `replied to your thread "${threadTitle}"`;
-            break;
-          case "comment_reply":
-            actionText = `replied to your comment in "${threadTitle}"`;
-            break;
-          case "mention":
-            actionText = `mentioned you in "${threadTitle}"`;
-            break;
-        }
+          let actionText = "";
+          switch (n.notification_type) {
+            case "thread_reply":
+              actionText = `replied to your thread "${escapeHtml(threadTitle)}"`;
+              break;
+            case "comment_reply":
+              actionText = `replied to your comment in "${escapeHtml(threadTitle)}"`;
+              break;
+            case "mention":
+              actionText = `mentioned you in "${escapeHtml(threadTitle)}"`;
+              break;
+          }
 
-        return `
-          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-            <strong>${authorName}</strong> ${actionText}
-            <p style="color: #6b7280; margin: 10px 0; font-size: 14px;">"${n.content_preview.substring(0, 150)}${n.content_preview.length > 150 ? '...' : ''}"</p>
-            <a href="${siteUrl}/thread/${threadSlug}" style="color: #667eea; text-decoration: none; font-size: 14px;">View discussion →</a>
-          </div>
-        `;
-      }).join("");
+          const safeAuthorName = escapeHtml(authorName);
+          const safePreview = escapeHtml(
+            (n.content_preview || "").substring(0, 150) +
+              ((n.content_preview || "").length > 150 ? "..." : "")
+          );
+          const safeSlug = encodeURIComponent(threadSlug);
 
-      const subject = frequency === "daily" 
-        ? `Your daily forum digest - ${notifications.length} new ${notifications.length === 1 ? 'notification' : 'notifications'}`
-        : `Your weekly forum digest - ${notifications.length} new ${notifications.length === 1 ? 'notification' : 'notifications'}`;
+          return `
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
+              <strong>${safeAuthorName}</strong> ${actionText}
+              <p style="color: #6b7280; margin: 10px 0; font-size: 14px;">"${safePreview}"</p>
+              <a href="${siteUrl}/thread/${safeSlug}" style="color: #667eea; text-decoration: none; font-size: 14px;">View discussion →</a>
+            </div>
+          `;
+        })
+        .join("");
+
+      const subject =
+        frequency === "daily"
+          ? `Your daily forum digest - ${notifications.length} new ${notifications.length === 1 ? "notification" : "notifications"}`
+          : `Your weekly forum digest - ${notifications.length} new ${notifications.length === 1 ? "notification" : "notifications"}`;
 
       const emailResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -144,8 +199,8 @@ const handler = async (req: Request): Promise<Response> => {
             <body>
               <div class="container">
                 <div class="header">
-                  <h1 style="margin: 0; font-size: 24px;">Your ${frequency === 'daily' ? 'Daily' : 'Weekly'} Digest</h1>
-                  <p style="margin: 10px 0 0 0; opacity: 0.9;">${notifications.length} new ${notifications.length === 1 ? 'notification' : 'notifications'}</p>
+                  <h1 style="margin: 0; font-size: 24px;">Your ${frequency === "daily" ? "Daily" : "Weekly"} Digest</h1>
+                  <p style="margin: 10px 0 0 0; opacity: 0.9;">${notifications.length} new ${notifications.length === 1 ? "notification" : "notifications"}</p>
                 </div>
                 <div class="content">
                   ${notificationItems}
@@ -162,13 +217,12 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
       if (emailResponse.ok) {
-        // Mark notifications as sent
-        const notificationIds = notifications.map(n => n.id);
+        const notificationIds = notifications.map((n) => n.id);
         await supabase
           .from("pending_notifications")
           .update({ is_sent: true, sent_at: new Date().toISOString() })
           .in("id", notificationIds);
-        
+
         emailsSent++;
       }
     }
@@ -180,7 +234,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-digest-emails function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
