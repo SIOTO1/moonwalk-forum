@@ -75,9 +75,10 @@ export function ViolationsManager() {
     mutationFn: async ({ violationId, reason }: { violationId: string; reason: string }) => {
       if (!user) throw new Error('Not authenticated');
       
+      // SECURITY: moderator identity is derived from auth.uid() inside the RPC,
+      // never trusted from the client.
       const { data, error } = await supabase.rpc('override_violation', {
         _violation_id: violationId,
-        _moderator_id: user.id,
         _reason: reason,
       });
 
